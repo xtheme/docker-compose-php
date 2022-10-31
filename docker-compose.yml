@@ -1,0 +1,69 @@
+version: "3.8"
+
+services:
+    # PHP service
+    php-fpm:
+        build:
+            context: ./php-fpm
+            args:
+                - PHP_VERSION=${PHP_VERSION}
+        container_name: php-fpm
+        volumes:
+            - ${WORKSPACE_PATH}:/var/www:cached
+            - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
+        networks:
+            - default
+
+    # MySQL database service
+    mysql:
+        image: mysql:${MYSQL_VERSION}
+        container_name: mysql-${MYSQL_VERSION}
+        ports:
+            - ${MYSQL_PORT}:3306
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - TZ=${TIMEZONE}
+        volumes:
+            - ./db-data:/var/lib/mysql
+        networks:
+            - default
+
+    # Nginx service
+    nginx:
+        image: nginx:alpine
+        container_name: nginx
+        ports:
+            - 80:80
+        volumes:
+            - ${WORKSPACE_PATH}:/var/www
+            - ./nginx/sites/:/etc/nginx/conf.d/
+        depends_on:
+            - php-fpm
+        restart: always
+        networks:
+            - default
+
+    # Redis service
+    redis:
+        image: redis:latest
+        container_name: redis
+        ports:
+            - ${REDIS_PORT}:6379
+        networks:
+            - default
+
+    # Redis-Cluster service
+    redis-cluster:
+        image: grokzen/redis-cluster:latest
+        container_name: redis-cluster
+        ports:
+            - ${REDIS_CLUSTER_PORT_RANGE}:7000-7005
+        networks:
+            - default
+
+networks:
+    default:
+        driver: bridge
