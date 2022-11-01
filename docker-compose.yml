@@ -1,13 +1,15 @@
 version: "3.8"
 
 services:
-    # PHP service
-    php-fpm:
+    # Admin: PHP-FPM workspace for admin service
+    admin:
         build:
             context: ./php-fpm
             args:
                 - PHP_VERSION=${PHP_VERSION}
-        container_name: php-fpm
+                - NODEJS_VERSION=${NODEJS_VERSION}
+                - TZ=${TIMEZONE}
+        container_name: admin
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
@@ -36,13 +38,14 @@ services:
         image: nginx:alpine
         container_name: nginx
         ports:
-            - 80:80
+            - "80:80"
+            - "443:443"
         volumes:
             - ${WORKSPACE_PATH}:/var/www
-            - ./nginx/sites/:/etc/nginx/conf.d/
+            - ./nginx/sites/:/etc/nginx/conf.d
+            - ./nginx/logs:/var/log/nginx
         depends_on:
-            - php-fpm
-        restart: always
+            - admin
         networks:
             - default
 
