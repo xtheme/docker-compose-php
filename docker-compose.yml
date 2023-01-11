@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-    # Admin: PHP-FPM workspace for admin service
+    # PHP-FPM workspace for admin service
     admin:
         build:
             context: ./php-fpm
@@ -13,6 +13,19 @@ services:
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
+        networks:
+            - default
+
+    # PHP-Swoole workspace for api service
+    api:
+        build:
+            context: ./php-swoole
+            args:
+                - PHP_VERSION=${PHP_VERSION}
+                - SWOOLE_VERSION=${SWOOLE_VERSION}
+        container_name: api
+        volumes:
+            - ${WORKSPACE_PATH}:/var/www:cached
         networks:
             - default
 
