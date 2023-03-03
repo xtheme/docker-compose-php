@@ -1,18 +1,36 @@
 version: "3.8"
 
 services:
+    # Nginx service
+    nginx:
+        image: nginx:alpine
+        container_name: nginx
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ${WORKSPACE_PATH}:/var/www
+            - ./nginx/sites/:/etc/nginx/conf.d
+            - ./nginx/logs:/var/log/nginx
+        depends_on:
+            - web
+        restart: always
+        networks:
+            - default
+
     # PHP-FPM workspace for admin service
-    admin:
+    web:
         build:
             context: ./php-fpm
             args:
                 - PHP_VERSION=${PHP_VERSION}
                 - NODEJS_VERSION=${NODEJS_VERSION}
                 - TZ=${TIMEZONE}
-        container_name: admin
+        container_name: web
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
+        tty: true
         networks:
             - default
 
@@ -22,10 +40,14 @@ services:
             context: ./php-swoole
             args:
                 - PHP_VERSION=${PHP_VERSION}
-                - SWOOLE_VERSION=${SWOOLE_VERSION}
         container_name: api
+        platform: linux/x86_64
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
+        ports:
+            - "8000:8000"
+            - "9501:9501"
+        tty: true
         networks:
             - default
 
@@ -43,22 +65,6 @@ services:
             - TZ=${TIMEZONE}
         volumes:
             - ./db-data:/var/lib/mysql
-        networks:
-            - default
-
-    # Nginx service
-    nginx:
-        image: nginx:alpine
-        container_name: nginx
-        ports:
-            - "80:80"
-            - "443:443"
-        volumes:
-            - ${WORKSPACE_PATH}:/var/www
-            - ./nginx/sites/:/etc/nginx/conf.d
-            - ./nginx/logs:/var/log/nginx
-        depends_on:
-            - admin
         networks:
             - default
 

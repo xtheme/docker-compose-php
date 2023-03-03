@@ -5,8 +5,11 @@ FROM php:${PHP_VERSION}-fpm
 RUN set -eux; \
     apt-get update \
     && apt-get install -y \
+    apache2-utils \
+    wrk \
     git \
     curl \
+    gnupg \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
@@ -62,19 +65,27 @@ RUN set -eux; \
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Install NodeJs 16.x
-RUN curl -sL https://deb.nodesource.com/setup_${NODEJS_VERSION}.x | bash -
-RUN apt-get install -y nodejs
+ARG NODEJS_VERSION
+RUN  apt-get update -yq \
+    && curl -sL https://deb.nodesource.com/setup_${NODEJS_VERSION}.x | bash \
+    && apt-get install nodejs -yq
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Timezone
-ARG TZ=UTC
-ENV TZ ${TZ}
+ARG TIMEZONE=UTC
+ENV TZ ${TIMEZONE}
 RUN ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone
 
 # Copy aliases
-COPY aliases.sh /etc/profile.d/
+COPY ./aliases.sh /root/aliases.sh
+
+RUN sed -i 's/\r//' /root/aliases.sh && \
+    echo "" >> ~/.bashrc && \
+    echo "# Load Custom Aliases" >> ~/.bashrc && \
+    echo "source ~/aliases.sh" >> ~/.bashrc && \
+    echo "" >> ~/.bashrc
 
 WORKDIR /var/www
 
