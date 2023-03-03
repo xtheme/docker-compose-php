@@ -91,6 +91,27 @@ services:
         networks:
             - default
 
+    clickhouse:
+        image: yandex/clickhouse-server
+        container_name: clickhouse
+        platform: linux/x86_64
+        ports:
+            - "9000:9000"
+        environment:
+            - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+            - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+        volumes:
+            - ./clickhouse/data:/var/lib/clickhouse
+            - ./clickhouse/config.xml:/etc/clickhouse-server/config.xml
+            - ./clickhouse/users.xml:/etc/clickhouse-server/users.xml
+            - ./clickhouse/log:/var/log/clickhouse
+        ulimits:
+            nofile:
+                soft: 262144
+                hard: 262144
+        networks:
+            - default
+
 networks:
     default:
         driver: bridge
