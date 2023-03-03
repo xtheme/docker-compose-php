@@ -53,8 +53,11 @@ services:
 
     # MySQL database service
     mysql:
-        image: mysql:${MYSQL_VERSION}
-        container_name: mysql-${MYSQL_VERSION}
+        build:
+            context: ./mysql
+            args:
+                - MYSQL_VERSION=${MYSQL_VERSION}
+        container_name: mysql
         ports:
             - ${MYSQL_PORT}:3306
         environment:
@@ -64,7 +67,9 @@ services:
             - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
             - TZ=${TIMEZONE}
         volumes:
-            - ./db-data:/var/lib/mysql
+            - ./mysql/data:/var/lib/mysql
+            - ./mysql/log:/var/log/mysql
+            - ./mysql/config:/etc/mysql/conf.d
         networks:
             - default
 

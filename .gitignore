@@ -1,3 +1,7 @@
 .env
-db-data/
+.DS_Store
 .idea/
+/mysql/data/*
+/mysql/log/*
+/clickhouse/data/*
+/clickhouse/log/*
