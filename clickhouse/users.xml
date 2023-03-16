@@ -9,6 +9,7 @@
 
             <!-- Use cache of uncompressed blocks of data. Meaningful only for processing many of very short queries. -->
             <use_uncompressed_cache>0</use_uncompressed_cache>
+            <allow_experimental_window_functions>1</allow_experimental_window_functions>
 
             <!-- How to choose between replicas during distributed query processing.
                  random - choose random replica from set of replicas with minimum number of errors
@@ -86,24 +87,25 @@
 
             <!-- For testing the table filters -->
             <databases>
-                <test>
-                    <!-- Simple expression filter -->
-                    <filtered_table1>
-                        <filter>a = 1</filter>
-                    </filtered_table1>
-
-                    <!-- Complex expression filter -->
-                    <filtered_table2>
-                        <filter>a + b &lt; 1 or c - d &gt; 5</filter>
-                    </filtered_table2>
-
-                    <!-- Filter with ALIAS column -->
-                    <filtered_table3>
-                        <filter>c = 1</filter>
-                    </filtered_table3>
-                </test>
             </databases>
         </default>
+
+        <root>
+            <password>pass</password>
+
+            <networks incl="networks" replace="replace">
+                <ip>::/0</ip>
+            </networks>
+
+            <!-- Settings profile for user. -->
+            <profile>default</profile>
+
+            <!-- Quota for user. -->
+            <quota>default</quota>
+
+            <!-- For testing the table filters -->
+
+        </root>
 
         <!-- Example of user with readonly access. -->
         <!-- <readonly>
