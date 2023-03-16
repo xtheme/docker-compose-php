@@ -17,6 +17,18 @@ services:
             - default
 
     # PHP-FPM workspace for admin service
+    php5:
+        build:
+            context: ./php5
+        container_name: php5
+        volumes:
+            - ${WORKSPACE_PATH}:/var/www
+            - ./php5/www.conf:/usr/local/etc/php-fpm.d/www.conf
+        tty: true
+        networks:
+            - default
+
+    # PHP-FPM workspace for admin service
     web:
         build:
             context: ./php-fpm
@@ -44,7 +56,9 @@ services:
             - ${WORKSPACE_PATH}:/var/www:cached
         ports:
             - "8000:8000"
+            - "9500:9500"
             - "9501:9501"
+            - "9502:9502"
         tty: true
         networks:
             - default

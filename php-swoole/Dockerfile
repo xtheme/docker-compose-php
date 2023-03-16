@@ -58,10 +58,12 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
 WORKDIR /var/www
 
 # Composer Cache
-# COPY ./composer.* /opt/www/
+# COPY ./composer.* /var/www/
 # RUN composer install --no-dev --no-scripts
 
 #COPY . /var/www
 #RUN composer install --no-dev -o && php bin/hyperf.php
-EXPOSE 8000 9501
-#ENTRYPOINT []
+
+EXPOSE 8000 9500 9501 9502
+
+#ENTRYPOINT ["php", "/var/www/bin/hyperf.php", "start"]
