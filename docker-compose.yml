@@ -16,17 +16,17 @@ services:
         networks:
             - default
 
-    # PHP-FPM workspace for admin service
-    php5:
-        build:
-            context: ./php5
-        container_name: php5
-        volumes:
-            - ${WORKSPACE_PATH}:/var/www
-            - ./php5/www.conf:/usr/local/etc/php-fpm.d/www.conf
-        tty: true
-        networks:
-            - default
+#    # PHP-FPM workspace for admin service
+#    php5:
+#        build:
+#            context: ./php5
+#        container_name: php5
+#        volumes:
+#            - ${WORKSPACE_PATH}:/var/www
+#            - ./php5/www.conf:/usr/local/etc/php-fpm.d/www.conf
+#        tty: true
+#        networks:
+#            - default
 
     # PHP-FPM workspace for admin service
     web:
@@ -118,6 +118,23 @@ services:
             nofile:
                 soft: 262144
                 hard: 262144
+        networks:
+            - default
+
+    # RabbitMQ service
+    rabbitmq:
+        build:
+            context: ./rabbitmq
+        container_name: rabbitmq
+        ports:
+        - "5672:5672"
+        - "15672:15672"
+        - "25672:25672"
+        volumes:
+        - ./rabbitmq/data:/var/lib/rabbitmq
+        - ./rabbitmq/logs:/var/log/rabbitmq
+        - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+        restart: always
         networks:
             - default
 

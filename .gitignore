@@ -5,3 +5,5 @@
 /mysql/log/*
 /clickhouse/data/*
 /clickhouse/log/*
+
+*.log
