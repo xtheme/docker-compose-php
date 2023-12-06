@@ -41,7 +41,10 @@ RUN set -ex \
     && echo -e "\033[42;37m Build Completed :).\033[0m\n"
 
 RUN apk upgrade \
-    && apk add --update iputils curl nodejs-current npm apache2-utils wrk
+    && apk add --update iputils curl nodejs-current npm apache2-utils wrk \
+
+# gif 轉 webp 工具
+RUN apk add --no-cache libwebp libwebp-tools
 
 # User Aliases
 COPY ./aliases.sh /root/aliases.sh
