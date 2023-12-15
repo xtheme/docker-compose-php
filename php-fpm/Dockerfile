@@ -66,7 +66,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 # Install NodeJs 16.x
 ARG NODEJS_VERSION
-RUN  apt-get update -yq \
+RUN apt-get update -yq \
     && curl -sL https://deb.nodesource.com/setup_${NODEJS_VERSION}.x | bash \
     && apt-get install nodejs -yq
 
