@@ -88,7 +88,3 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
     echo "" >> ~/.bashrc
 
 WORKDIR /var/www
-
-EXPOSE 9000
-
-CMD ["php-fpm", "-R"]

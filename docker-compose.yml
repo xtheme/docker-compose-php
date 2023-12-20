@@ -16,19 +16,7 @@ services:
         networks:
             - default
 
-#    # PHP-FPM workspace for admin service
-#    php5:
-#        build:
-#            context: ./php5
-#        container_name: php5
-#        volumes:
-#            - ${WORKSPACE_PATH}:/var/www
-#            - ./php5/www.conf:/usr/local/etc/php-fpm.d/www.conf
-#        tty: true
-#        networks:
-#            - default
-
-    # PHP-FPM workspace for admin service
+    #  PHP-FPM workspace for admin service
     web:
         build:
             context: ./php-fpm
@@ -37,6 +25,8 @@ services:
                 - NODEJS_VERSION=${NODEJS_VERSION}
                 - TZ=${TIMEZONE}
         container_name: web
+        ports:
+            - "9000:9000"
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
@@ -67,26 +57,26 @@ services:
             - default
 
     # MySQL database service
-    mysql:
-        build:
-            context: ./mysql
-            args:
-                - MYSQL_VERSION=${MYSQL_VERSION}
-        container_name: mysql
-        ports:
-            - "${MYSQL_PORT}:3306"
-        environment:
-            - MYSQL_DATABASE=${MYSQL_DATABASE}
-            - MYSQL_USER=${MYSQL_USER}
-            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-            - TZ=${TIMEZONE}
-        volumes:
-            - ./mysql/data:/var/lib/mysql
-            - ./mysql/log:/var/log/mysql
-            - ./mysql/config:/etc/mysql/conf.d
-        networks:
-            - default
+#    mysql:
+#        build:
+#            context: ./mysql
+#            args:
+#                - MYSQL_VERSION=${MYSQL_VERSION}
+#        container_name: mysql
+#        ports:
+#            - "${MYSQL_PORT}:3306"
+#        environment:
+#            - MYSQL_DATABASE=${MYSQL_DATABASE}
+#            - MYSQL_USER=${MYSQL_USER}
+#            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+#            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+#            - TZ=${TIMEZONE}
+#        volumes:
+#            - ./mysql/data:/var/lib/mysql
+#            - ./mysql/log:/var/log/mysql
+#            - ./mysql/config:/etc/mysql/conf.d
+#        networks:
+#            - default
 
     # Redis service
     redis:
@@ -125,22 +115,22 @@ services:
 #            - default
 
     # RabbitMQ service
-    rabbitmq:
-        build:
-            context: ./rabbitmq
-        container_name: rabbitmq
-        hostname: rabbitmq
-        ports:
-        - "5672:5672"
-        - "15672:15672"
-        - "25672:25672"
-        volumes:
-        - ./rabbitmq/data:/var/lib/rabbitmq
-        - ./rabbitmq/logs:/var/log/rabbitmq
-        - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-        restart: always
-        networks:
-            - default
+#    rabbitmq:
+#        build:
+#            context: ./rabbitmq
+#        container_name: rabbitmq
+#        hostname: rabbitmq
+#        ports:
+#        - "5672:5672"
+#        - "15672:15672"
+#        - "25672:25672"
+#        volumes:
+#        - ./rabbitmq/data:/var/lib/rabbitmq
+#        - ./rabbitmq/logs:/var/log/rabbitmq
+#        - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+#        restart: always
+#        networks:
+#            - default
 
 #    elasticsearch:
 #        image: elasticsearch:7.8.0
