@@ -87,15 +87,6 @@ services:
         networks:
             - default
 
-    # Redis-Cluster service
-#    redis-cluster:
-#        image: grokzen/redis-cluster:latest
-#        container_name: redis-cluster
-#        ports:
-#            - "${REDIS_CLUSTER_PORT_RANGE}:7000-7005"
-#        networks:
-#            - default
-
     # RabbitMQ service
     rabbitmq:
         build:
