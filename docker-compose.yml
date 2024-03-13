@@ -57,26 +57,26 @@ services:
             - default
 
     # MySQL database service
-#    mysql:
-#        build:
-#            context: ./mysql
-#            args:
-#                - MYSQL_VERSION=${MYSQL_VERSION}
-#        container_name: mysql
-#        ports:
-#            - "${MYSQL_PORT}:3306"
-#        environment:
-#            - MYSQL_DATABASE=${MYSQL_DATABASE}
-#            - MYSQL_USER=${MYSQL_USER}
-#            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-#            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-#            - TZ=${TIMEZONE}
-#        volumes:
-#            - ./mysql/data:/var/lib/mysql
-#            - ./mysql/log:/var/log/mysql
-#            - ./mysql/config:/etc/mysql/conf.d
-#        networks:
-#            - default
+    mysql:
+        build:
+            context: ./mysql
+            args:
+                - MYSQL_VERSION=${MYSQL_VERSION}
+        container_name: mysql
+        ports:
+            - "${MYSQL_PORT}:3306"
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - TZ=${TIMEZONE}
+        volumes:
+            - ./mysql/data:/var/lib/mysql
+            - ./mysql/log:/var/log/mysql
+            - ./mysql/config:/etc/mysql/conf.d
+        networks:
+            - default
 
     # Redis service
     redis:
