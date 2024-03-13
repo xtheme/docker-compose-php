@@ -115,22 +115,22 @@ services:
 #            - default
 
     # RabbitMQ service
-#    rabbitmq:
-#        build:
-#            context: ./rabbitmq
-#        container_name: rabbitmq
-#        hostname: rabbitmq
-#        ports:
-#        - "5672:5672"
-#        - "15672:15672"
-#        - "25672:25672"
-#        volumes:
-#        - ./rabbitmq/data:/var/lib/rabbitmq
-#        - ./rabbitmq/logs:/var/log/rabbitmq
-#        - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-#        restart: always
-#        networks:
-#            - default
+    rabbitmq:
+        build:
+            context: ./rabbitmq
+        container_name: rabbitmq
+        hostname: rabbitmq
+        ports:
+        - "5672:5672"
+        - "15672:15672"
+        - "25672:25672"
+        volumes:
+        - ./rabbitmq/data:/var/lib/rabbitmq
+        - ./rabbitmq/logs:/var/log/rabbitmq
+        - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+        restart: always
+        networks:
+            - default
 
 #    elasticsearch:
 #        image: elasticsearch:7.8.0
