@@ -47,7 +47,7 @@ RUN apk upgrade \
 RUN apk add --no-cache libwebp libwebp-tools
 
 # imagick
-RUN apk add --no-cache php81-pecl-imagick
+RUN apk add --no-cache php83-pecl-imagick
 
 # User Aliases
 COPY ./aliases.sh /root/aliases.sh
