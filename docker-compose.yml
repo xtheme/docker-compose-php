@@ -106,7 +106,8 @@ services:
             - default
 
     gitlab-runner:
-        image: gitlab/gitlab-runner
+        build:
+            context: ./gitlab-runner
         container_name: gitlab-runner
         restart: always
         volumes:
