@@ -17,22 +17,22 @@ services:
             - default
 
     #  PHP-FPM workspace for admin service
-    web:
-        build:
-            context: ./php-fpm
-            args:
-                - PHP_VERSION=${PHP_VERSION}
-                - NODEJS_VERSION=${NODEJS_VERSION}
-                - TZ=${TIMEZONE}
-        container_name: web
-        ports:
-            - "9000:9000"
-        volumes:
-            - ${WORKSPACE_PATH}:/var/www:cached
-            - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
-        tty: true
-        networks:
-            - default
+    # web:
+    #     build:
+    #         context: ./php-fpm
+    #         args:
+    #             - PHP_VERSION=${PHP_VERSION}
+    #             - NODEJS_VERSION=${NODEJS_VERSION}
+    #             - TZ=${TIMEZONE}
+    #     container_name: web
+    #     ports:
+    #         - "9000:9000"
+    #     volumes:
+    #         - ${WORKSPACE_PATH}:/var/www:cached
+    #         - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
+    #     tty: true
+    #     networks:
+    #         - default
 
     # PHP-Swoole workspace for api service
     api:
@@ -88,22 +88,22 @@ services:
             - default
 
     # RabbitMQ service
-    rabbitmq:
-        build:
-            context: ./rabbitmq
-        container_name: rabbitmq
-        hostname: rabbitmq
-        ports:
-        - "5672:5672"
-        - "15672:15672"
-        - "25672:25672"
-        volumes:
-        - ./rabbitmq/data:/var/lib/rabbitmq
-        - ./rabbitmq/logs:/var/log/rabbitmq
-        - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-        restart: always
-        networks:
-            - default
+    # rabbitmq:
+    #     build:
+    #         context: ./rabbitmq
+    #     container_name: rabbitmq
+    #     hostname: rabbitmq
+    #     ports:
+    #     - "5672:5672"
+    #     - "15672:15672"
+    #     - "25672:25672"
+    #     volumes:
+    #     - ./rabbitmq/data:/var/lib/rabbitmq
+    #     - ./rabbitmq/logs:/var/log/rabbitmq
+    #     - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    #     restart: always
+    #     networks:
+    #         - default
 
     gitlab-runner:
         build:
