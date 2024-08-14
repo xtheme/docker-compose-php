@@ -5,5 +5,9 @@
 /mysql/log/*
 /clickhouse/data/*
 /clickhouse/log/*
+/elasticsearch/*
+/gitlab-runner/config/*
+/rabbitmq/data/*
+
 
 *.log
