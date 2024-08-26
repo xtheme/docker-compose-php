@@ -6,15 +6,6 @@ RUN apt-get update && apt-get install -y docker.io
 
 # 添加初始化脚本
 RUN echo '#!/bin/sh\n\
-    ### BEGIN INIT INFO\n\
-    # Provides:          docker-sock-permissions\n\
-    # Required-Start:    $remote_fs $syslog\n\
-    # Required-Stop:     $remote_fs $syslog\n\
-    # Default-Start:     2 3 4 5\n\
-    # Default-Stop:      0 1 6\n\
-    # Short-Description: Set permissions for Docker socket\n\
-    # Description:       This script sets the permissions for the Docker socket\n\
-    ### END INIT INFO\n\
     \n\
     chmod 666 /var/run/docker.sock\n\
     exit 0' > /etc/init.d/docker-sock-permissions
@@ -23,4 +14,10 @@ RUN echo '#!/bin/sh\n\
 RUN chmod +x /etc/init.d/docker-sock-permissions
 
 # 将脚本添加到系统启动项
-RUN update-rc.d docker-sock-permissions defaults
+RUN ln -s /etc/init.d/docker-sock-permissions /etc/rc2.d/S99docker-sock-permissions
+RUN ln -s /etc/init.d/docker-sock-permissions /etc/rc3.d/S99docker-sock-permissions
+RUN ln -s /etc/init.d/docker-sock-permissions /etc/rc4.d/S99docker-sock-permissions
+RUN ln -s /etc/init.d/docker-sock-permissions /etc/rc5.d/S99docker-sock-permissions
+
+# 下面這行沒作用
+# RUN update-rc.d docker-sock-permissions defaults
