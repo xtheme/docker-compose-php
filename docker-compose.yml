@@ -106,6 +106,8 @@ services:
     gitlab-runner:
         build:
             context: ./gitlab-runner
+            args:
+                - DOCKER_GROUP_ID=${DOCKER_GROUP_ID}
         container_name: gitlab-runner
         restart: always
         volumes:
