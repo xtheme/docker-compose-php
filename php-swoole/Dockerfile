@@ -66,8 +66,8 @@ WORKDIR /var/www
 # RUN composer install --no-dev --no-scripts
 
 #COPY . /var/www
-#RUN composer install --no-dev -o && php bin/hyperf.php
+# RUN composer install && php bin/hyperf.php
 
-EXPOSE 8000 9500 9501 9502
+EXPOSE 9501
 
-ENTRYPOINT cd carrental_php && php bin/hyperf.php start
+ENTRYPOINT ["php", "/var/www/carrental_php/bin/hyperf.php", "start"]
