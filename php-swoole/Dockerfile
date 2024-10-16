@@ -46,6 +46,13 @@ RUN apk upgrade \
 # gif 轉 webp 工具
 RUN apk add --no-cache libwebp libwebp-tools
 
+# mysqldump for ETL
+RUN apk upgrade \
+    && apk add --no-cache mysql-client
+
+# chrome for crawler
+RUN apk add --no-cache chromium
+
 # imagick
 RUN apk add --no-cache php83-pecl-imagick
 
