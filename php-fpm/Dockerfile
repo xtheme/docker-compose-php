@@ -63,6 +63,8 @@ RUN set -eux; \
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# composer 降級
+RUN composer self-update --1
 
 # Install NodeJs 16.x
 ARG NODEJS_VERSION
