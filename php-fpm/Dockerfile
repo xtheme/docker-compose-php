@@ -66,6 +66,11 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # composer 降級
 RUN composer self-update --1
 
+# Install Xdebug
+# https://matthewsetter.com/setup-step-debugging-php-xdebug3-docker/
+RUN pecl install xdebug-3.1.6 \
+    && docker-php-ext-enable xdebug
+
 # Install NodeJs 16.x
 ARG NODEJS_VERSION
 RUN apt-get update -yq \
