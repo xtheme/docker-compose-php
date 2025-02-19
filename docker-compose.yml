@@ -33,6 +33,16 @@ services:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
             - ${SSH_KEY_PATH}:/root/.ssh/id_rsa
+            - ./php-fpm/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf
+        extra_hosts:
+            - "agent-api.local:host-gateway"
+            - "cronjob.local:host-gateway"
+            - "external-api.local:host-gateway"
+            - "front-api.local:host-gateway"
+            - "internal-api.local:host-gateway"
+            - "socket-api.local:host-gateway"
+            - "agent-web.local:host-gateway"
+            - "socket-web.local:host-gateway"
         tty: true
         networks:
             - default
