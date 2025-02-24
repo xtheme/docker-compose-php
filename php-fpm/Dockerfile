@@ -63,12 +63,24 @@ RUN set -eux; \
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-# composer 降級
-RUN composer self-update --1
+
+# 如果此用 PHP 8 以下版本，則 composer 降級
+RUN if [ $(echo "$PHP_VERSION < 8" | bc) -eq 1 ]; then \
+        # composer 降級
+        RUN composer self-update --1; \
+    fi
 
 # Install Xdebug
 # https://matthewsetter.com/setup-step-debugging-php-xdebug3-docker/
-RUN pecl install xdebug-3.1.6 \
+#RUN pecl install xdebug-3.1.6 \
+#    && docker-php-ext-enable xdebug
+
+# 依據 PHP 版本安裝 Xdebug
+RUN if [ $(echo "$PHP_VERSION >= 8" | bc) -eq 1 ]; then \
+        pecl install xdebug-3.2.0; \
+    else \
+        pecl install xdebug-2.9.8; \
+    fi \
     && docker-php-ext-enable xdebug
 
 # Install NodeJs 16.x

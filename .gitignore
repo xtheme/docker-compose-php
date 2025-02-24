@@ -8,6 +8,8 @@
 /elasticsearch/*
 /gitlab-runner/config/*
 /rabbitmq/data/*
-
-
+/mysql8/data/*
+/mysql8/log/*
 *.log
+
+

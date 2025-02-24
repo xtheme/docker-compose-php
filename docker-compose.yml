@@ -39,11 +39,9 @@ services:
         networks:
             - default
 
-    # PHP-Swoole workspace for api service
-#:q
-
     # MySQL database service
     mysql:
+        platform: linux/amd64
         build:
             context: ./mysql
             args:
@@ -61,6 +59,48 @@ services:
             - ./mysql/data:/var/lib/mysql
             - ./mysql/log:/var/log/mysql
             - ./mysql/config:/etc/mysql/conf.d
+        networks:
+            - default
+
+    #  PHP-FPM workspace for admin service
+    php-fpm8:
+        build:
+            context: ./php-fpm
+            args:
+                - PHP_VERSION=${PHP8_VERSION}
+                - NODEJS_VERSION=${NODEJS_VERSION}
+                - TZ=${TIMEZONE}
+        container_name: php-fpm8
+        ports:
+            - "9001:9000"
+        volumes:
+            - ${WORKSPACE_PATH}:/var/www:cached
+            - ./php-fpm/ini/php${PHP8_VERSION}.ini:/usr/local/etc/php/php.ini
+            - ${SSH_KEY_PATH}:/root/.ssh/id_rsa
+            - ./php-fpm/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+            - ./php-fpm/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
+        tty: true
+        networks:
+            - default
+
+    mysql8:
+        build:
+            context: ./mysql8
+            args:
+                - MYSQL_VERSION=${MYSQL8_VERSION}
+        container_name: mysql8
+        ports:
+            - "${MYSQL8_PORT}:3306"
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - TZ=${TIMEZONE}
+        volumes:
+            - ./mysql8/data:/var/lib/mysql
+            - ./mysql8/log:/var/log/mysql
+            - ./mysql8/config:/etc/mysql/conf.d
         networks:
             - default
 
