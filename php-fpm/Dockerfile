@@ -67,7 +67,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # 如果此用 PHP 8 以下版本，則 composer 降級
 RUN if [ $(echo "$PHP_VERSION < 8" | bc) -eq 1 ]; then \
         # composer 降級
-        RUN composer self-update --1; \
+        composer self-update --1; \
     fi
 
 # Install Xdebug
@@ -79,7 +79,7 @@ RUN if [ $(echo "$PHP_VERSION < 8" | bc) -eq 1 ]; then \
 RUN if [ $(echo "$PHP_VERSION >= 8" | bc) -eq 1 ]; then \
         pecl install xdebug-3.2.0; \
     else \
-        pecl install xdebug-2.9.8; \
+        pecl install xdebug-3.1.6; \
     fi \
     && docker-php-ext-enable xdebug
 
