@@ -55,7 +55,7 @@ RUN set -eux; \
     tidy \
     timezonedb \
     uuid \
-    xdebug \
+    # xdebug \
     xlswriter \
     xsl \
     yac \
