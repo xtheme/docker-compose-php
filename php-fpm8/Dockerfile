@@ -16,7 +16,8 @@ RUN set -eux; \
     zip \
     unzip \
     cron  \
-    ffmpeg
+    ffmpeg \
+    default-mysql-client
 
 # Add docker php ext repo
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/

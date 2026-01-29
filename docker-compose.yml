@@ -74,7 +74,7 @@ services:
                 - MYSQL_VERSION=${MYSQL_VERSION}
         container_name: mysql
         ports:
-            - "${MYSQL_PORT}:3306"
+            - "${MYSQL_PORT}:3305"
         environment:
             - MYSQL_DATABASE=${MYSQL_DATABASE}
             - MYSQL_USER=${MYSQL_USER}
@@ -109,12 +109,12 @@ services:
         
         extra_hosts:
             - "agent-api.local:host-gateway"
+            - "agent-web.local:host-gateway"
             - "cronjob.local:host-gateway"
             - "external-api.local:host-gateway"
             - "front-api.local:host-gateway"
             - "internal-api.local:host-gateway"
             - "socket-api.local:host-gateway"
-            - "agent-web.local:host-gateway"
             - "socket-web.local:host-gateway"
             - "apis.local:host-gateway"
         tty: true

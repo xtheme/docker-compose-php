@@ -3,6 +3,7 @@ alias ls='ls -F --color=auto --show-control-chars'
 
 alias pa="php artisan"
 alias artisan="php artisan"
+alias tinker="php artisan tinker"
 alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'
 
 alias cdagent="cd /var/www/API_Agent/_release"
