@@ -91,8 +91,8 @@ RUN apt-get update -yq \
     && curl -sL https://deb.nodesource.com/setup_${NODEJS_VERSION}.x | bash \
     && apt-get install nodejs -yq
 
-# Install Claude CLI
-RUN npm install -g @anthropic-ai/claude-code
+# Install Claude CLI & GitHub Copilot CLI
+RUN npm install -g @anthropic-ai/claude-code @github/copilot
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

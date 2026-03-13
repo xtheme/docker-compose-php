@@ -37,6 +37,7 @@ services:
             - ./php-fpm/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
             - ./php-fpm/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
             - ~/.claude:/root/.claude
+            - ~/.copilot:/root/.copilot
         
         extra_hosts:
             - "agent-api.local:host-gateway"
@@ -108,6 +109,7 @@ services:
             - ./php-fpm8/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
             - ./php-fpm8/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
             - ~/.claude:/root/.claude
+            - ~/.copilot:/root/.copilot
         
         extra_hosts:
             - "agent-api.local:host-gateway"
