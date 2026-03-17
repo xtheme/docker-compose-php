@@ -13,3 +13,4 @@ alias cdfront="cd /var/www/API_Frontend/_release"
 alias cdinternal="cd /var/www/api-internal/_release"
 alias cdsocket="cd /var/www/WEB_CustomerServiceSocket/_release"
 
+export PS1="[php-fpm] \u@\h:\w\$ "
