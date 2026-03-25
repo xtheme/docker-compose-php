@@ -1,10 +1,15 @@
 alias ll='ls -l'
 alias ls='ls -F --color=auto --show-control-chars'
 
+# Laravel Artisan 別名
 alias pa="php artisan"
 alias artisan="php artisan"
 alias tinker="php artisan tinker"
 alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'
+
+# MySQL 連接別名
+alias mysql57="mysql -h mysql -P 3305 -u root -p"
+alias mysql80="mysql -h mysql8 -P 3306 -u root -p"
 
 alias cdagent="cd /var/www/API_Agent/_release"
 alias cdcronjob="cd /var/www/RD-Studio-01/_release"
