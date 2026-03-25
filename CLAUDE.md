@@ -134,3 +134,8 @@ IDE 設定 Listen Port 為 `9003`。
 - RabbitMQ 與 GitLab Runner 預設停用，需要時在 `docker-compose.yml` 取消註解
 - MySQL 5.7 對外埠為 `3305`，MySQL 8.0 為 `3306`（可在 `.env` 調整）
 - 容器間通訊使用容器名稱（如 `mysql`、`redis`），不使用 `localhost`
+
+---
+
+**最後更新**：2026-03-25
+
