@@ -64,6 +64,9 @@ RUN set -eux; \
     yaml \
     zip
 
+# Copy php.ini for current PHP version
+COPY ./ini/php${PHP_VERSION}.ini /usr/local/etc/php/php.ini
+
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
