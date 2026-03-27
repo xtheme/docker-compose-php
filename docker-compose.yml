@@ -110,7 +110,8 @@ services:
             - ./php-fpm8/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
             - ~/.claude:/root/.claude
             - ~/.copilot:/root/.copilot
-        
+            - ~/.config/gcloud:/root/.config/gcloud
+
         extra_hosts:
             - "agent-api.local:host-gateway"
             - "agent-web.local:host-gateway"
