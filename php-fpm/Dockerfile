@@ -15,6 +15,7 @@ RUN set -eux; \
     libxml2-dev \
     zip \
     unzip \
+    bc \
     cron  \
     ffmpeg \
     zsh \

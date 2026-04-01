@@ -15,6 +15,7 @@ RUN set -eux; \
     libxml2-dev \
     zip \
     unzip \
+    bc \
     cron  \
     ffmpeg \
     zsh \
@@ -73,6 +74,12 @@ RUN VERSION=$(echo ${PHP_VERSION} | cut -d. -f1,2) && \
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# 如果此用 PHP 8 以下版本，則 composer 降級
+RUN if [ $(echo "$PHP_VERSION < 8" | bc) -eq 1 ]; then \
+        # composer 降級
+        composer self-update --1; \
+    fi
 
 # Install NodeJs 16.x
 ARG NODEJS_VERSION
