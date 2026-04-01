@@ -18,4 +18,11 @@ alias cdfront="cd /var/www/API_Frontend/_release"
 alias cdinternal="cd /var/www/api-internal/_release"
 alias cdsocket="cd /var/www/WEB_CustomerServiceSocket/_release"
 
-export PS1="[php-fpm] \u@\h:\w\$ "
+# Prompt：依 Shell 種類設定正確語法
+if [ -n "$ZSH_VERSION" ]; then
+    # Zsh 語法
+    PROMPT='[php-fpm] %n@%m:%~%# '
+else
+    # Bash 語法
+    export PS1="[php-fpm] \u@\h:\w\$ "
+fi

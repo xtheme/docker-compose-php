@@ -83,8 +83,8 @@ docker-compose up -d --build php-fpm8
 ### 進入容器
 
 ```bash
-docker-compose exec php-fpm zsh
-docker-compose exec php-fpm8 zsh
+docker-compose exec php-fpm bash
+docker-compose exec php-fpm8 bash
 docker-compose exec web sh
 docker-compose exec mysql mysql -u user -p
 ```

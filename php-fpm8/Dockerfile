@@ -122,13 +122,13 @@ RUN ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezo
 COPY ./aliases.sh /root/aliases.sh
 
 RUN sed -i 's/\r//' /root/aliases.sh && \
-    echo "" >> ~/.bashrc && \
-    echo "# Load Custom Aliases" >> ~/.bashrc && \
-    echo "source ~/aliases.sh" >> ~/.bashrc && \
-    echo "" >> ~/.bashrc && \
-    echo "" >> ~/.zshrc && \
-    echo "# Load Custom Aliases" >> ~/.zshrc && \
-    echo "source ~/aliases.sh" >> ~/.zshrc && \
-    echo "" >> ~/.zshrc
+    echo "" >> /root/.bashrc && \
+    echo "# Load Custom Aliases" >> /root/.bashrc && \
+    echo "source /root/aliases.sh" >> /root/.bashrc && \
+    echo "" >> /root/.bashrc && \
+    echo "" >> /root/.zshrc && \
+    echo "# Load Custom Aliases" >> /root/.zshrc && \
+    echo "source /root/aliases.sh" >> /root/.zshrc && \
+    echo "" >> /root/.zshrc
 
 WORKDIR /var/www

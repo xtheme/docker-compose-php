@@ -3,8 +3,8 @@ FROM php:${PHP_VERSION}-fpm
 
 # Install system dependencies
 RUN set -eux; \
-    apt-get update \
-    && apt-get install -y \
+    apt-get update && \
+    apt-get install -y \
     apache2-utils \
     wrk \
     git \
@@ -57,12 +57,19 @@ RUN set -eux; \
     tidy \
     timezonedb \
     uuid \
-    # xdebug \
+    pcov \
+    xdebug \
     xlswriter \
     xsl \
     yac \
     yaml \
     zip
+
+# Copy php.ini for current PHP version (截取 major.minor，排除 patch 版本號)
+COPY ./ini/ /tmp/php-ini/
+RUN VERSION=$(echo ${PHP_VERSION} | cut -d. -f1,2) && \
+    cp /tmp/php-ini/php${VERSION}.ini /usr/local/etc/php/php.ini && \
+    rm -rf /tmp/php-ini
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -73,18 +80,6 @@ RUN if [ $(echo "$PHP_VERSION < 8" | bc) -eq 1 ]; then \
         composer self-update --1; \
     fi
 
-# Install Xdebug
-# https://matthewsetter.com/setup-step-debugging-php-xdebug3-docker/
-#RUN pecl install xdebug-3.1.6 \
-#    && docker-php-ext-enable xdebug
-
-# 依據 PHP 版本安裝 Xdebug
-RUN if [ $(echo "$PHP_VERSION >= 8" | bc) -eq 1 ]; then \
-        pecl install xdebug-3.2.0; \
-    else \
-        pecl install xdebug-3.1.6; \
-    fi \
-    && docker-php-ext-enable xdebug
 
 # Install NodeJs 16.x
 ARG NODEJS_VERSION
@@ -95,11 +90,32 @@ RUN apt-get update -yq \
 # Install Claude CLI & GitHub Copilot CLI
 RUN npm install -g @anthropic-ai/claude-code @github/copilot
 
+# Install Google Cloud CLI
+RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+       > /etc/apt/sources.list.d/google-cloud-sdk.list \
+    && apt-get update \
+    && apt-get install -y google-cloud-cli
+
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Oh My Zsh
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+# Install zsh plugins: autosuggestions + syntax highlighting + completions
+RUN git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
+        ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-autosuggestions && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
+        ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-completions \
+        ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-completions
+
+# Enable plugins in .zshrc and configure autosuggestions
+RUN sed -i 's/^plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions docker composer)/' /root/.zshrc && \
+    echo 'autoload -U compinit && compinit' >> /root/.zshrc && \
+    echo 'ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=244"' >> /root/.zshrc && \
+    echo 'ZSH_AUTOSUGGEST_STRATEGY=(history completion)' >> /root/.zshrc
 
 # Set zsh as default shell
 RUN chsh -s $(which zsh)
@@ -113,13 +129,13 @@ RUN ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezo
 COPY ./aliases.sh /root/aliases.sh
 
 RUN sed -i 's/\r//' /root/aliases.sh && \
-    echo "" >> ~/.bashrc && \
-    echo "# Load Custom Aliases" >> ~/.bashrc && \
-    echo "source ~/aliases.sh" >> ~/.bashrc && \
-    echo "" >> ~/.bashrc && \
-    echo "" >> ~/.zshrc && \
-    echo "# Load Custom Aliases" >> ~/.zshrc && \
-    echo "source ~/aliases.sh" >> ~/.zshrc && \
-    echo "" >> ~/.zshrc
+    echo "" >> /root/.bashrc && \
+    echo "# Load Custom Aliases" >> /root/.bashrc && \
+    echo "source /root/aliases.sh" >> /root/.bashrc && \
+    echo "" >> /root/.bashrc && \
+    echo "" >> /root/.zshrc && \
+    echo "# Load Custom Aliases" >> /root/.zshrc && \
+    echo "source /root/aliases.sh" >> /root/.zshrc && \
+    echo "" >> /root/.zshrc
 
 WORKDIR /var/www
