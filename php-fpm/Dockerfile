@@ -17,6 +17,7 @@ RUN set -eux; \
     unzip \
     cron  \
     ffmpeg \
+    zsh \
     default-mysql-client
 
 # Add docker php ext repo
@@ -97,6 +98,12 @@ RUN npm install -g @anthropic-ai/claude-code @github/copilot
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install Oh My Zsh
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+# Set zsh as default shell
+RUN chsh -s $(which zsh)
+
 # Timezone
 ARG TIMEZONE=UTC
 ENV TZ ${TIMEZONE}
@@ -109,6 +116,10 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
     echo "" >> ~/.bashrc && \
     echo "# Load Custom Aliases" >> ~/.bashrc && \
     echo "source ~/aliases.sh" >> ~/.bashrc && \
-    echo "" >> ~/.bashrc
+    echo "" >> ~/.bashrc && \
+    echo "" >> ~/.zshrc && \
+    echo "# Load Custom Aliases" >> ~/.zshrc && \
+    echo "source ~/aliases.sh" >> ~/.zshrc && \
+    echo "" >> ~/.zshrc
 
 WORKDIR /var/www

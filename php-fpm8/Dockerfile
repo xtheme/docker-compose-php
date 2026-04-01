@@ -3,8 +3,8 @@ FROM php:${PHP_VERSION}-fpm
 
 # Install system dependencies
 RUN set -eux; \
-    apt-get update \
-    && apt-get install -y \
+    apt-get update && \
+    apt-get install -y \
     apache2-utils \
     wrk \
     git \
@@ -17,6 +17,7 @@ RUN set -eux; \
     unzip \
     cron  \
     ffmpeg \
+    zsh \
     default-mysql-client
 
 # Add docker php ext repo
@@ -64,8 +65,11 @@ RUN set -eux; \
     yaml \
     zip
 
-# Copy php.ini for current PHP version
-COPY ./ini/php${PHP_VERSION}.ini /usr/local/etc/php/php.ini
+# Copy php.ini for current PHP version (截取 major.minor，排除 patch 版本號)
+COPY ./ini/ /tmp/php-ini/
+RUN VERSION=$(echo ${PHP_VERSION} | cut -d. -f1,2) && \
+    cp /tmp/php-ini/php${VERSION}.ini /usr/local/etc/php/php.ini && \
+    rm -rf /tmp/php-ini
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -89,6 +93,26 @@ RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dea
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install Oh My Zsh
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+# Install zsh plugins: autosuggestions (Fish-like history suggestions) + syntax highlighting
+RUN git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
+        ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-autosuggestions && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
+        ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-completions \
+        ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-completions
+
+# Enable plugins in .zshrc and configure autosuggestions
+RUN sed -i 's/^plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions docker composer)/' /root/.zshrc && \
+    echo 'autoload -U compinit && compinit' >> /root/.zshrc && \
+    echo 'ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=244"' >> /root/.zshrc && \
+    echo 'ZSH_AUTOSUGGEST_STRATEGY=(history completion)' >> /root/.zshrc
+
+# Set zsh as default shell
+RUN chsh -s $(which zsh)
+
 # Timezone
 ARG TIMEZONE=UTC
 ENV TZ ${TIMEZONE}
@@ -101,6 +125,10 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
     echo "" >> ~/.bashrc && \
     echo "# Load Custom Aliases" >> ~/.bashrc && \
     echo "source ~/aliases.sh" >> ~/.bashrc && \
-    echo "" >> ~/.bashrc
+    echo "" >> ~/.bashrc && \
+    echo "" >> ~/.zshrc && \
+    echo "# Load Custom Aliases" >> ~/.zshrc && \
+    echo "source ~/aliases.sh" >> ~/.zshrc && \
+    echo "" >> ~/.zshrc
 
 WORKDIR /var/www

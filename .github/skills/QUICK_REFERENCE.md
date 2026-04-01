@@ -27,8 +27,11 @@ docker-compose down
 ## Q2. 進入容器
 
 ```bash
-docker-compose exec php-fpm bash
-docker-compose exec php-fpm8 bash
+# PHP 容器建議用 zsh（Oh My Zsh + 自動補完生效）
+docker-compose exec php-fpm zsh
+docker-compose exec php-fpm8 zsh
+
+# 其他容器
 docker-compose exec mysql bash
 docker-compose exec mysql8 bash
 docker-compose exec web sh
@@ -92,7 +95,7 @@ docker-compose exec php-fpm8 bash -lc "mysql80"
 ### 找不到 artisan
 
 ```bash
-docker-compose exec php-fpm8 bash
+docker-compose exec php-fpm8 zsh
 pwd
 cdfront
 ls -la artisan
@@ -116,6 +119,6 @@ ls -la artisan
 
 ---
 
-**最後更新**：2026-03-25
+**最後更新**：2026-04-01
 
 
