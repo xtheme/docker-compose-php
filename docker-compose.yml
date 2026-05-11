@@ -33,12 +33,15 @@ services:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
             - ${SSH_KEY_PATH}:/root/.ssh/id_rsa
+            - ${SSH_KEY_PATH}.pub:/root/.ssh/id_rsa.pub:ro
+            - ~/.ssh/known_hosts:/root/.ssh/known_hosts
+            - ~/.gitconfig:/root/.gitconfig:ro
             - ./php-fpm/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf
             - ./php-fpm/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
             - ./php-fpm/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
             - ~/.claude:/root/.claude
             - ~/.copilot:/root/.copilot
-        
+
         extra_hosts:
             - "agent-api.local:host-gateway"
             - "cronjob.local:host-gateway"
@@ -105,6 +108,9 @@ services:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm8/ini/php${PHP8_VERSION}.ini:/usr/local/etc/php/php.ini
             - ${SSH_KEY_PATH}:/root/.ssh/id_rsa
+            - ${SSH_KEY_PATH}.pub:/root/.ssh/id_rsa.pub:ro
+            - ~/.ssh/known_hosts:/root/.ssh/known_hosts
+            - ~/.gitconfig:/root/.gitconfig:ro
             - ./php-fpm8/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf
             - ./php-fpm8/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
             - ./php-fpm8/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
