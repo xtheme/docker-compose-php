@@ -1,0 +1,141 @@
+# AGENTS.md — Docker-Compose 開發環境
+
+## 專案概述
+
+這是一個用於本地開發的 Docker 容器編排環境，支援多版本 PHP、MySQL、Redis 等服務。主要服務對象為 Laravel 與 Hyperf 框架的應用開發。
+
+## 技術棧
+
+| 服務 | 技術 | 版本 |
+|------|------|------|
+| Web 伺服器 | Nginx | alpine |
+| PHP (舊版) | PHP-FPM | 7.3 (預設) |
+| PHP (新版) | PHP-FPM8 | 8.4 |
+| 非同步框架 | PHP-Swoole (Hyperf) | 8.3 |
+| 資料庫 (舊) | MySQL | 5.7 |
+| 資料庫 (新) | MySQL8 | 8.0.30 |
+| 快取 | Redis | latest |
+| 訊息佇列 | RabbitMQ | 3.11（已停用，可選）|
+| CI/CD | GitLab Runner | latest（已停用，可選）|
+
+## 目錄結構
+
+```
+Docker-Compose/
+├── docker-compose.yml   # 主要編排設定
+├── .env                 # 環境變數（不納入 git）
+├── .env.example         # 環境變數範本
+├── nginx/               # Nginx 設定與虛擬主機
+│   ├── nginx.conf
+│   ├── upstream.conf    # 定義 php-upstream / php-upstream8
+│   └── sites/           # 各專案的 .conf 虛擬主機設定
+├── php-fpm/             # PHP 7.x 容器
+│   ├── Dockerfile
+│   ├── conf.d/          # Xdebug 設定
+│   ├── ini/             # 各 PHP 版本的 php.ini
+│   └── php-fpm.d/       # FPM 進程池設定
+├── php-fpm8/            # PHP 8.x 容器
+├── php-swoole/          # PHP-Swoole (Hyperf) 容器
+├── mysql/               # MySQL 5.7
+├── mysql8/              # MySQL 8.0
+├── redis/               # Redis
+├── rabbitmq/            # RabbitMQ（可選）
+└── gitlab-runner/       # GitLab Runner（可選）
+```
+
+## 環境變數
+
+複製 `.env.example` 為 `.env` 並依實際情況調整：
+
+```bash
+cp .env.example .env
+```
+
+關鍵變數：
+
+| 變數 | 說明 | 預設值 |
+|------|------|--------|
+| `WORKSPACE_PATH` | 應用程式碼根目錄 | `../www` |
+| `PHP_VERSION` | PHP 7.x 版本 | `7.3` |
+| `PHP8_VERSION` | PHP 8.x 版本 | `8.4` |
+| `TIMEZONE` | 時區 | `Asia/Shanghai` |
+| `NODEJS_VERSION` | NodeJS 版本 | `16` 或 `23` |
+| `MYSQL_PORT` | MySQL 5.7 外部埠 | `3305` |
+| `MYSQL8_PORT` | MySQL 8.0 外部埠 | `3306` |
+| `REDIS_PORT` | Redis 埠 | `6379` |
+
+## 常用指令
+
+### 啟動服務
+
+```bash
+# 啟動核心服務
+docker-compose up -d web php-fpm php-fpm8 mysql mysql8 redis
+
+# 啟動全部服務
+docker-compose up -d
+
+# 重新建置並啟動
+docker-compose up -d --build php-fpm
+docker-compose up -d --build php-fpm8
+```
+
+### 進入容器
+
+```bash
+docker-compose exec php-fpm bash
+docker-compose exec php-fpm8 bash
+docker-compose exec web sh
+docker-compose exec mysql mysql -u user -p
+```
+
+### 查看日誌
+
+```bash
+docker-compose logs -f web
+docker-compose logs -f php-fpm
+docker-compose logs -f mysql
+```
+
+### 停止服務
+
+```bash
+docker-compose down
+docker-compose down -v   # 含 volumes（謹慎使用）
+```
+
+## 新增虛擬主機
+
+1. 在 `nginx/sites/` 建立新的 `.conf` 檔案
+2. 根據 PHP 版本選擇上游：
+   - PHP 7.x → `fastcgi_pass php-upstream;`
+   - PHP 8.x → `fastcgi_pass php-upstream8;`
+3. 在 `docker-compose.yml` 的 `php-fpm` / `php-fpm8` `extra_hosts` 加入對應的 `.local` host
+4. 重新啟動 Nginx：`docker-compose restart web`
+
+## Xdebug 設定
+
+配置檔位於 `php-fpm/conf.d/xdebug.ini`：
+
+```ini
+xdebug.mode = debug,develop
+xdebug.start_with_request = yes
+xdebug.client_host = host.docker.internal
+xdebug.client_port = 9003
+```
+
+IDE 設定 Listen Port 為 `9003`。
+
+## 注意事項
+
+- `.env` 不納入 git，請勿提交機密資訊
+- MySQL 資料目錄 (`mysql/data/`, `mysql8/data/`) 不納入 git
+- 修改 Dockerfile 後需重新建置：`docker-compose up -d --build <service>`
+- RabbitMQ 與 GitLab Runner 預設停用，需要時在 `docker-compose.yml` 取消註解
+- MySQL 5.7 對外埠為 `3305`，MySQL 8.0 為 `3306`（可在 `.env` 調整）
+- 容器間通訊使用容器名稱（如 `mysql`、`redis`），不使用 `localhost`
+
+---
+
+**最後更新**：2026-03-25
+
