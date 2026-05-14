@@ -1,5 +1,7 @@
 # AGENTS.md — Docker-Compose 開發環境
 
+> 給 AI coding agent 的專案指南，遵循 [agents.md](https://agents.md) 規範。與 [`CLAUDE.md`](CLAUDE.md) 內容對齊；人類使用請見 [`README.md`](README.md)。
+
 ## 專案概述
 
 這是一個用於本地開發的 Docker 容器編排環境，支援多版本 PHP、MySQL、Redis 等服務。主要服務對象為 Laravel 與 Hyperf 框架的應用開發。
@@ -17,6 +19,7 @@
 | 快取 | Redis | latest |
 | 訊息佇列 | RabbitMQ | 3.11（已停用，可選）|
 | CI/CD | GitLab Runner | latest（已停用，可選）|
+| LLM UI | open-webui | main（連 host 端 Ollama）|
 
 ## 目錄結構
 
@@ -63,6 +66,29 @@ cp .env.example .env
 | `MYSQL_PORT` | MySQL 5.7 外部埠 | `3305` |
 | `MYSQL8_PORT` | MySQL 8.0 外部埠 | `3306` |
 | `REDIS_PORT` | Redis 埠 | `6379` |
+
+## 開發工作流程（重要）
+
+1. **進容器執行命令**：`~/Workspace/*` 子專案的 `git` / `composer` / `php` / `artisan` 操作須進 `php-fpm8` 容器執行，不要在 host 端直接跑（避免 PHP 版本與權限差異）。
+2. **容器間連線用服務名稱**：應用連 DB / Redis 一律用 `mysql`、`mysql8`、`redis`，不用 `localhost`。
+3. **標準步驟**：進容器 → `cdXxx` 切目錄 → 執行 → 驗證。
+4. **GitLab 憑證**：本機 GitLab 私服為 `gitlab.terpro.com:1022`（非 gitlab.com），SSH key `~/.ssh/id_ed25519` 已透過 volume 掛入 php-fpm 容器。
+
+## 容器內別名（php-fpm / php-fpm8）
+
+定義於 `php-fpm/aliases.sh`、`php-fpm8/aliases.sh`：
+
+| 別名 | 用途 |
+|------|------|
+| `pa`, `artisan` | `php artisan` |
+| `tinker` | `php artisan tinker` |
+| `mysql57`, `mysql80` | 互動式連線 MySQL 5.7 / 8.0（root）|
+| `cdfront` | `cd /var/www/API_Frontend/_release` |
+| `cdagent` | `cd /var/www/API_Agent/_release` |
+| `cdexternal` | `cd /var/www/API_External/_release` |
+| `cdinternal` | `cd /var/www/api-internal/_release` |
+| `cdcronjob` | `cd /var/www/RD-Studio-01/_release` |
+| `cdsocket` | `cd /var/www/WEB_CustomerServiceSocket/_release` |
 
 ## 常用指令
 
@@ -126,16 +152,49 @@ xdebug.client_port = 9003
 
 IDE 設定 Listen Port 為 `9003`。
 
-## 注意事項
+## Commit 與 PR 規範
 
-- `.env` 不納入 git，請勿提交機密資訊
+採用 Conventional Commits（標題以中文描述）：
+
+```
+<type>: <繁體中文簡述>
+```
+
+常用 `type`：
+
+| Type | 用途 |
+|------|------|
+| `feat` | 新功能 / 新服務 |
+| `fix` | 修正錯誤設定或行為 |
+| `chore` | 維護性調整（時區、重啟策略、文件）|
+| `docs` | 純文件變更 |
+| `refactor` | 不影響行為的重構 |
+
+範例（取自實際 git log）：
+
+```
+feat: 映射 GitLab 憑證至 PHP 容器
+fix: 註解 PHP 8.4 已棄用的 session sid 相關設定
+chore: 設定 MySQL 8 預設時區為 UTC
+```
+
+## 安全注意事項
+
+- `.env` 不納入 git，請勿提交機密資訊（密碼、token、SSH key）
 - MySQL 資料目錄 (`mysql/data/`, `mysql8/data/`) 不納入 git
+- 範例設定（如 `.env.example`）一律以佔位符表示，不放實際憑證
+- 對外開放埠口僅供本機開發，請勿暴露至公網
+- 容器內的 `~/.ssh/`、`~/.gitconfig`、`~/.claude` 為 host 端掛載，操作會影響 host
+
+## 其他注意事項
+
 - 修改 Dockerfile 後需重新建置：`docker-compose up -d --build <service>`
 - RabbitMQ 與 GitLab Runner 預設停用，需要時在 `docker-compose.yml` 取消註解
 - MySQL 5.7 對外埠為 `3305`，MySQL 8.0 為 `3306`（可在 `.env` 調整）
-- 容器間通訊使用容器名稱（如 `mysql`、`redis`），不使用 `localhost`
+- MySQL 8 預設時區為 **UTC**（commit `aed66d6`）；MySQL 5.7 沿用 `TIMEZONE`（`Asia/Shanghai`）
+- PHP 8.4 已停用 `session.sid_*` 相關設定，請勿在 `php.ini` 加回（commit `4fd1111`）
+- SSH key 走 `~/.ssh/id_ed25519`（搭配私服 GitLab `gitlab.terpro.com:1022`）；`.env.example` 內 `id_rsa` 為通用範例
 
 ---
 
-**最後更新**：2026-03-25
-
+**最後更新**：2026-05-14
