@@ -53,6 +53,7 @@ services:
             - "socket-web.local:host-gateway"
             - "apis.local:host-gateway"
         tty: true
+        restart: unless-stopped
         networks:
             - default
 
@@ -67,6 +68,7 @@ services:
         ports:
             - "9501:9501"
         tty: true
+        restart: unless-stopped
         networks:
             - default
 
@@ -90,6 +92,7 @@ services:
             - ./mysql/data:/var/lib/mysql
             - ./mysql/log:/var/log/mysql
             - ./mysql/config:/etc/mysql/conf.d
+        restart: unless-stopped
         networks:
             - default
 
@@ -129,6 +132,7 @@ services:
             - "socket-web.local:host-gateway"
             - "apis.local:host-gateway"
         tty: true
+        restart: unless-stopped
         networks:
             - default
 
@@ -150,6 +154,7 @@ services:
             - ./mysql8/data:/var/lib/mysql
             - ./mysql8/log:/var/log/mysql
             - ./mysql8/config:/etc/mysql/conf.d
+        restart: unless-stopped
         networks:
             - default
 
@@ -159,6 +164,7 @@ services:
         container_name: redis
         ports:
             - "${REDIS_PORT}:6379"
+        restart: unless-stopped
         networks:
             - default
 
