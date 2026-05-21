@@ -1,7 +1,0 @@
-[mcp_servers.notion]
-args = [
-    "-y",
-    "mcp-remote",
-    "https://mcp.notion.com/mcp",
-]
-command = "npx"
