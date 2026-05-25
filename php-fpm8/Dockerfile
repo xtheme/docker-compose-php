@@ -18,7 +18,6 @@ RUN set -eux; \
     bc \
     cron  \
     ffmpeg \
-    zsh \
     default-mysql-client
 
 # Add docker php ext repo
@@ -87,38 +86,8 @@ RUN apt-get update -yq \
     && curl -sL https://deb.nodesource.com/setup_${NODEJS_VERSION}.x | bash \
     && apt-get install nodejs -yq
 
-# Install Claude CLI & GitHub Copilot CLI
-RUN npm install -g @anthropic-ai/claude-code @github/copilot
-
-# Install Google Cloud CLI
-RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
-       > /etc/apt/sources.list.d/google-cloud-sdk.list \
-    && apt-get update \
-    && apt-get install -y google-cloud-cli
-
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install Oh My Zsh
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-# Install zsh plugins: autosuggestions (Fish-like history suggestions) + syntax highlighting
-RUN git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
-        ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-autosuggestions && \
-    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
-        ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting && \
-    git clone --depth=1 https://github.com/zsh-users/zsh-completions \
-        ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-completions
-
-# Enable plugins in .zshrc and configure autosuggestions
-RUN sed -i 's/^plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions docker composer)/' /root/.zshrc && \
-    echo 'autoload -U compinit && compinit' >> /root/.zshrc && \
-    echo 'ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=244"' >> /root/.zshrc && \
-    echo 'ZSH_AUTOSUGGEST_STRATEGY=(history completion)' >> /root/.zshrc
-
-# Set zsh as default shell
-RUN chsh -s $(which zsh)
 
 # Timezone
 ARG TIMEZONE=UTC
@@ -132,10 +101,6 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
     echo "" >> /root/.bashrc && \
     echo "# Load Custom Aliases" >> /root/.bashrc && \
     echo "source /root/aliases.sh" >> /root/.bashrc && \
-    echo "" >> /root/.bashrc && \
-    echo "" >> /root/.zshrc && \
-    echo "# Load Custom Aliases" >> /root/.zshrc && \
-    echo "source /root/aliases.sh" >> /root/.zshrc && \
-    echo "" >> /root/.zshrc
+    echo "" >> /root/.bashrc
 
 WORKDIR /var/www

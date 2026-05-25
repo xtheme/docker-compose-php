@@ -182,7 +182,7 @@ chore: 設定 MySQL 8 預設時區為 UTC
 - MySQL 資料目錄 (`mysql/data/`, `mysql8/data/`) 不納入 git
 - 範例設定（如 `.env.example`）一律以佔位符表示，不放實際憑證
 - 對外開放埠口僅供本機開發，請勿暴露至公網
-- 容器內的 `~/.ssh/`、`~/.gitconfig`、`~/.claude` 為 host 端掛載，操作會影響 host
+- 容器內的 `~/.ssh/`、`~/.gitconfig` 為 host 端掛載，操作會影響 host
 
 ## 其他注意事項
 
