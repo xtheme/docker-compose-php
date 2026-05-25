@@ -1,47 +1,47 @@
-# Docker-Compose A 階段優化 Implementation Plan
+# Docker-Compose A 階段優化實作計畫
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **給代理工作者：** 必要子技能：使用 superpowers:subagent-driven-development（推薦）或 superpowers:executing-plans 逐 task 執行本計畫。步驟以核取框（`- [ ]`）追蹤。
 
-**Goal:** Apply A1–A6 changes from `docs/superpowers/specs/2026-05-25-docker-compose-cleanup-design.md`: align `.env.example`, unify restart policy, add `.dockerignore`, mount SSH private key read-only, drop unused FPM host ports, and strip Oh My Zsh / Google Cloud CLI / Claude / Copilot CLI from both PHP containers.
+**目標：** 套用 `docs/superpowers/specs/2026-05-25-docker-compose-cleanup-design.md` 中的 A1–A6 變更：對齊 `.env.example`、統一 restart 策略、新增 `.dockerignore`、SSH 私鑰改為唯讀掛載、移除 PHP-FPM 對 host 不必要的 port，並從兩個 PHP 容器中移除 Oh My Zsh / Google Cloud CLI / Claude / Copilot CLI。
 
-**Architecture:** Three sequential commits — (1) `.env.example` only, (2) `docker-compose.yml` setting / security cluster, (3) Dockerfile + compose volume + docs cleanup for A6. A6 is the only one that requires `docker compose build`; A1–A5 are pure config edits.
+**整體架構：** 三個依序的 commit ——（1）只動 `.env.example`；（2）`docker-compose.yml` 的設定與安全性集合；（3）A6 涵蓋 Dockerfile、compose 卷掛載、文件同步。只有 A6 需要 `docker compose build`，A1–A5 都是純設定編輯。
 
-**Tech Stack:** Docker Compose v2, Dockerfile (PHP 7.3 / 8.4 official `php:*-fpm` images), bash inside container.
-
----
-
-## File Structure
-
-| File | Action | Purpose |
-|------|--------|---------|
-| `.env.example` | Modify | Align port / Node version with `.env` and CLAUDE.md; drop ClickHouse leftover (A1) |
-| `docker-compose.yml` | Modify | Restart policy unification (A2), SSH `:ro` (A4), drop FPM host ports (A5), drop AI-tool volumes (A6) |
-| `.dockerignore` | Create | Trim build context, never leak `mysql/data/`, `.git/`, `.idea/`, `.claude/`, etc. (A3) |
-| `php-fpm/Dockerfile` | Modify | Remove `zsh` apt entry, Claude/Copilot CLI npm install, Google Cloud CLI install, Oh My Zsh + plugins + chsh, `.zshrc` writes (A6) |
-| `php-fpm8/Dockerfile` | Modify | Same as php-fpm (A6, two-container sync) |
-| `CLAUDE.md` | Modify | Remove `~/.claude` from container-mount list (A6 doc sync) |
-| `AGENTS.md` | Modify | Same as CLAUDE.md (line 187) |
-
-**No tests will be added** — this is infrastructure cleanup with no application code. Verification is via `docker compose config` parse, `docker compose build`, and the validation matrix from the spec.
+**技術棧：** Docker Compose v2、Dockerfile（PHP 7.3 / 8.4 官方 `php:*-fpm` image）、容器內 bash。
 
 ---
 
-## Task 1: A1 — Rewrite `.env.example`
+## 檔案結構
 
-**Files:**
-- Modify: `/Users/rb/Docker-Compose/.env.example`
+| 檔案 | 動作 | 用途 |
+|------|------|------|
+| `.env.example` | 修改 | 對齊 `.env` 與 CLAUDE.md 的 port / Node 版本；移除過時的 ClickHouse 區塊（A1） |
+| `docker-compose.yml` | 修改 | 統一 restart 策略（A2）、SSH `:ro`（A4）、移除 FPM 對外 port（A5）、移除 AI 工具卷（A6） |
+| `.dockerignore` | 新增 | 瘦化 build context，避免把 `mysql/data/`、`.git/`、`.idea/`、`.claude/` 等帶進 image 邊界（A3） |
+| `php-fpm/Dockerfile` | 修改 | 移除 `zsh` apt 套件、Claude/Copilot CLI npm install、Google Cloud CLI 安裝、Oh My Zsh + plugin + chsh、`.zshrc` 寫入（A6） |
+| `php-fpm8/Dockerfile` | 修改 | 與 php-fpm 同步（A6） |
+| `CLAUDE.md` | 修改 | 從「容器內 host 掛載」清單移除 `~/.claude`（A6 文件同步） |
+| `AGENTS.md` | 修改 | 與 CLAUDE.md 同（第 187 行） |
 
-- [ ] **Step 1: Snapshot current state**
+**本計畫不新增測試** —— 這是基礎設施清理，沒有應用程式碼變更。驗證依靠 `docker compose config` 解析、`docker compose build`、以及 spec 中的驗證矩陣。
+
+---
+
+## Task 1：A1 — 改寫 `.env.example`
+
+**檔案：**
+- 修改：`/Users/rb/Docker-Compose/.env.example`
+
+- [ ] **Step 1：先確認當前內容**
 
 ```bash
 cat /Users/rb/Docker-Compose/.env.example
 ```
 
-Expected current content includes `MYSQL_PORT=3306`, `MYSQL8_PORT=3308`, `NODEJS_VERSION=23`, and two `#CLICKHOUSE_*` lines.
+預期當前內容應包含 `MYSQL_PORT=3306`、`MYSQL8_PORT=3308`、`NODEJS_VERSION=23`、以及兩行 `#CLICKHOUSE_*`。
 
-- [ ] **Step 2: Replace `.env.example` with aligned values**
+- [ ] **Step 2：用以下確切內容覆寫 `.env.example`**
 
-Use `Write` to overwrite `/Users/rb/Docker-Compose/.env.example` with the following exact content:
+用 `Write` 工具將 `/Users/rb/Docker-Compose/.env.example` 替換為：
 
 ```dotenv
 WORKSPACE_PATH=../www
@@ -68,18 +68,18 @@ REDIS_PORT=6379
 REDIS_CLUSTER_PORT_RANGE=7000-7005
 ```
 
-Changes vs. previous:
+變更項目：
 
-| Key | Before | After |
-|-----|--------|-------|
+| Key | 變更前 | 變更後 |
+|-----|--------|--------|
 | `NODEJS_VERSION` | `23` | `20` |
 | `MYSQL_PORT` | `3306` | `3305` |
 | `MYSQL8_PORT` | `3308` | `3306` |
-| `#CLICKHOUSE_USER` / `#CLICKHOUSE_PASSWORD` | present (commented) | removed |
+| `#CLICKHOUSE_USER` / `#CLICKHOUSE_PASSWORD` | 存在（已註解） | 移除 |
 
-**Do NOT add `MYSQL8_DATABASE` / `MYSQL8_USER` / `MYSQL8_PASSWORD` / `MYSQL8_ROOT_PASSWORD`** — per spec §A1 the `mysql8` service still consumes `MYSQL_*`; adding `MYSQL8_*` would mislead developers.
+**不要新增 `MYSQL8_DATABASE` / `MYSQL8_USER` / `MYSQL8_PASSWORD` / `MYSQL8_ROOT_PASSWORD`** —— 依 spec §A1，`mysql8` service 目前仍消費 `MYSQL_*`，加上 `MYSQL8_*` 反而會誤導開發者。
 
-- [ ] **Step 3: Verify the example renders standalone with compose**
+- [ ] **Step 3：驗證 example 可獨立 render compose**
 
 ```bash
 cd /Users/rb/Docker-Compose
@@ -89,12 +89,12 @@ echo "exit=$?"
 grep -E 'MYSQL_PORT|MYSQL8_PORT|NODEJS_VERSION' /tmp/.env.test
 ```
 
-Expected:
+預期：
 - `exit=0`
-- `MYSQL_PORT=3305`, `MYSQL8_PORT=3306`, `NODEJS_VERSION=20`
-- `docker compose config` prints no warnings about undefined variables
+- `MYSQL_PORT=3305`、`MYSQL8_PORT=3306`、`NODEJS_VERSION=20`
+- `docker compose config` 不應印出任何「未定義變數」警告
 
-- [ ] **Step 4: Commit (commit #1 of 3)**
+- [ ] **Step 4：Commit（3 個 commit 中的第 1 個）**
 
 ```bash
 cd /Users/rb/Docker-Compose
@@ -109,7 +109,7 @@ git commit -m "chore: 對齊 .env.example 與 CLAUDE.md / .env 三方設定
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
-Verify:
+驗證：
 
 ```bash
 git log --oneline -1
@@ -118,14 +118,14 @@ git show --stat HEAD
 
 ---
 
-## Task 2: A2 — Unify restart policy
+## Task 2：A2 — 統一 restart 策略
 
-**Files:**
-- Modify: `/Users/rb/Docker-Compose/docker-compose.yml` (two lines)
+**檔案：**
+- 修改：`/Users/rb/Docker-Compose/docker-compose.yml`（2 處）
 
-- [ ] **Step 1: Change `web` service restart to `unless-stopped`**
+- [ ] **Step 1：將 `web` service 的 restart 改為 `unless-stopped`**
 
-Use `Edit` on `/Users/rb/Docker-Compose/docker-compose.yml`:
+用 `Edit` 工具於 `/Users/rb/Docker-Compose/docker-compose.yml`：
 
 ```
 old_string:
@@ -149,9 +149,9 @@ new_string:
     php-fpm:
 ```
 
-- [ ] **Step 2: Change `open-webui` service restart to `unless-stopped`**
+- [ ] **Step 2：將 `open-webui` service 的 restart 改為 `unless-stopped`**
 
-Use `Edit`:
+用 `Edit`：
 
 ```
 old_string:
@@ -167,33 +167,33 @@ new_string:
         restart: unless-stopped
 ```
 
-- [ ] **Step 3: Confirm no `restart: always` remains**
+- [ ] **Step 3：確認沒有 `restart: always` 殘留**
 
 ```bash
 cd /Users/rb/Docker-Compose
 grep -nE '^\s*restart:' docker-compose.yml
 ```
 
-Expected: every line in the (uncommented) services is `restart: unless-stopped`. Commented-out blocks for `rabbitmq` / `gitlab-runner` / `elasticsearch` may still show `always` — that is acceptable.
+預期：每個未被註解的 service 都是 `restart: unless-stopped`。被註解的 `rabbitmq` / `gitlab-runner` / `elasticsearch` 區塊內可能還是 `always`，那可接受。
 
 ---
 
-## Task 3: A3 — Create `.dockerignore`
+## Task 3：A3 — 新增 `.dockerignore`
 
-**Files:**
-- Create: `/Users/rb/Docker-Compose/.dockerignore`
+**檔案：**
+- 新增：`/Users/rb/Docker-Compose/.dockerignore`
 
-- [ ] **Step 1: Confirm the file does not already exist**
+- [ ] **Step 1：確認檔案不存在**
 
 ```bash
 ls -la /Users/rb/Docker-Compose/.dockerignore 2>&1
 ```
 
-Expected: `No such file or directory`.
+預期：`No such file or directory`。
 
-- [ ] **Step 2: Create `.dockerignore` with the spec content**
+- [ ] **Step 2：用 spec 中的內容建立 `.dockerignore`**
 
-Use `Write` on `/Users/rb/Docker-Compose/.dockerignore` with exactly this content:
+用 `Write` 寫入 `/Users/rb/Docker-Compose/.dockerignore`，內容如下：
 
 ```
 # Version control & IDE
@@ -231,25 +231,25 @@ CLAUDE.md
 AGENTS.md
 ```
 
-- [ ] **Step 3: Sanity-check file**
+- [ ] **Step 3：檢查檔案**
 
 ```bash
 wc -l /Users/rb/Docker-Compose/.dockerignore
 head -5 /Users/rb/Docker-Compose/.dockerignore
 ```
 
-Expected: 30 lines (give or take blank lines), first content line is `# Version control & IDE`.
+預期：約 30 行（空行誤差可接受），第一個有內容的行為 `# Version control & IDE`。
 
 ---
 
-## Task 4: A4 — Mount SSH private key read-only
+## Task 4：A4 — SSH 私鑰改為唯讀掛載
 
-**Files:**
-- Modify: `/Users/rb/Docker-Compose/docker-compose.yml` (two lines)
+**檔案：**
+- 修改：`/Users/rb/Docker-Compose/docker-compose.yml`（2 處）
 
-- [ ] **Step 1: Edit `php-fpm` private key mount**
+- [ ] **Step 1：修改 `php-fpm` 服務的私鑰掛載**
 
-Use `Edit` on `/Users/rb/Docker-Compose/docker-compose.yml`. The four-line block including the `php${PHP_VERSION}.ini` line uniquely anchors the `php-fpm` service (not `php-fpm8` which uses `${PHP8_VERSION}`):
+用 `Edit` 於 `/Users/rb/Docker-Compose/docker-compose.yml`。下列四行 anchor 中的 `php${PHP_VERSION}.ini` 唯一鎖定 `php-fpm`（`php-fpm8` 使用 `${PHP8_VERSION}`，不會誤中）：
 
 ```
 old_string:
@@ -267,7 +267,7 @@ new_string:
             - ${SSH_KEY_PATH}.pub:/root/.ssh/id_rsa.pub:ro
 ```
 
-- [ ] **Step 2: Edit `php-fpm8` private key mount**
+- [ ] **Step 2：修改 `php-fpm8` 服務的私鑰掛載**
 
 ```
 old_string:
@@ -285,25 +285,25 @@ new_string:
             - ${SSH_KEY_PATH}.pub:/root/.ssh/id_rsa.pub:ro
 ```
 
-- [ ] **Step 3: Confirm both mounts are now `:ro`**
+- [ ] **Step 3：確認兩個掛載都帶上 `:ro`**
 
 ```bash
 cd /Users/rb/Docker-Compose
 grep -n 'id_rsa' docker-compose.yml
 ```
 
-Expected: four `id_rsa` lines, two end in `:ro` for `id_rsa` (private key) and two end in `:ro` for `id_rsa.pub`.
+預期：四行 `id_rsa`，其中 `id_rsa`（私鑰）的兩行結尾為 `:ro`，`id_rsa.pub`（公鑰）的兩行也是 `:ro`。
 
 ---
 
-## Task 5: A5 — Remove FPM host ports
+## Task 5：A5 — 移除 PHP-FPM 對 host 的 port
 
-**Files:**
-- Modify: `/Users/rb/Docker-Compose/docker-compose.yml` (two `ports:` blocks)
+**檔案：**
+- 修改：`/Users/rb/Docker-Compose/docker-compose.yml`（2 處 `ports:`）
 
-- [ ] **Step 1: Remove `php-fpm` `ports:` block**
+- [ ] **Step 1：移除 `php-fpm` 的 `ports:` 區塊**
 
-Use `Edit`:
+用 `Edit`：
 
 ```
 old_string:
@@ -317,7 +317,7 @@ new_string:
         volumes:
 ```
 
-- [ ] **Step 2: Remove `php-fpm8` `ports:` block**
+- [ ] **Step 2：移除 `php-fpm8` 的 `ports:` 區塊**
 
 ```
 old_string:
@@ -331,30 +331,30 @@ new_string:
         volumes:
 ```
 
-- [ ] **Step 3: Confirm only intended ports remain**
+- [ ] **Step 3：確認只剩預期的 port**
 
 ```bash
 cd /Users/rb/Docker-Compose
 grep -nB1 -A1 -E '"[0-9]+:[0-9]+"' docker-compose.yml | head -40
 ```
 
-Expected ports list:
-- `web`: `"80:80"`, `"443:443"`
-- `api` (Swoole): `"9501:9501"`
-- `mysql`: `"${MYSQL_PORT}:3306"`
-- `mysql8`: `"${MYSQL8_PORT}:3306"`
-- `redis`: `"${REDIS_PORT}:6379"`
-- `open-webui`: `"3000:8080"`
+預期 port 清單：
+- `web`：`"80:80"`、`"443:443"`
+- `api`（Swoole）：`"9501:9501"`
+- `mysql`：`"${MYSQL_PORT}:3306"`
+- `mysql8`：`"${MYSQL8_PORT}:3306"`
+- `redis`：`"${REDIS_PORT}:6379"`
+- `open-webui`：`"3000:8080"`
 
-No `9000:9000` or `9001:9000` should remain.
+不應再有 `9000:9000` 或 `9001:9000`。
 
 ---
 
-## Task 6: Verify A2–A5 cluster then commit (commit #2 of 3)
+## Task 6：驗證 A2–A5 整組變更並 commit（3 個 commit 中的第 2 個）
 
-**Files:** none modified in this task; just verify and commit.
+**檔案：** 本 task 不再修改檔案，只做驗證與 commit。
 
-- [ ] **Step 1: Render compose to catch syntax errors**
+- [ ] **Step 1：render compose 抓語法錯誤**
 
 ```bash
 cd /Users/rb/Docker-Compose
@@ -362,17 +362,17 @@ docker compose config > /tmp/compose-after-a2-a5.yml
 echo "exit=$?"
 ```
 
-Expected: `exit=0`. If it prints `level=warning msg="services.x: ..."` lines, read them — they may be benign (e.g., env var defaults). Errors must be zero.
+預期：`exit=0`。若出現 `level=warning msg="services.x: ..."` 之類的警告，要先看是不是良性訊息（例如環境變數 default）。錯誤必須為零。
 
-- [ ] **Step 2: Inspect rendered yaml shows the new state**
+- [ ] **Step 2：檢查 render 後的 yaml 反映了新的狀態**
 
 ```bash
 grep -E 'restart:|id_rsa|"9000:|"9001:' /tmp/compose-after-a2-a5.yml
 ```
 
-Expected: every `restart:` value is `unless-stopped`, every `id_rsa` (not `.pub`) entry is read-only, no `9000:` or `9001:` lines.
+預期：所有 `restart:` 都是 `unless-stopped`、所有 `id_rsa`（非 `.pub`）都是唯讀、不再出現 `9000:` 或 `9001:`。
 
-- [ ] **Step 3: Restart core services with new settings**
+- [ ] **Step 3：用新設定重啟核心服務**
 
 ```bash
 cd /Users/rb/Docker-Compose
@@ -380,26 +380,26 @@ docker compose up -d web php-fpm php-fpm8 mysql mysql8 redis
 docker compose ps
 ```
 
-Expected: all six services `running` or `healthy`.
+預期：六個服務都 `running` 或 `healthy`。
 
-- [ ] **Step 4: Smoke test that nginx can still reach PHP-FPM via service network**
+- [ ] **Step 4：煙霧測試 nginx → PHP-FPM 經 service network 是否仍通**
 
 ```bash
 docker compose exec -T web sh -c 'wget -qO- --timeout=3 http://php-fpm:9000 2>&1 | head -1 ; echo "status=$?"'
 docker compose exec -T web sh -c 'wget -qO- --timeout=3 http://php-fpm8:9000 2>&1 | head -1 ; echo "status=$?"'
 ```
 
-PHP-FPM does not speak HTTP, so wget will fail at the protocol layer — but the TCP connection itself succeeding is the proof that container-to-container 9000 still works. Look for `status=` to be `0`, `1`, or `8` (HTTP-protocol-level fail), **not** `4` / `5` (network unreachable). If `status=4`, the FPM port is genuinely unreachable and A5 broke something.
+PHP-FPM 不講 HTTP，所以 wget 一定會在協定層失敗 —— 重點是 TCP 連線成功代表容器間 9000 仍可達。看 `status=`，預期是 `0`、`1` 或 `8`（HTTP 層失敗），**不是** `4` / `5`（網路不可達）。如果 `status=4`，代表 FPM port 真的不通，A5 把可達性弄壞了。
 
-A more reliable check is via nginx itself:
+更可靠的檢測是經由 nginx：
 
 ```bash
 curl -sS -o /dev/null -w "%{http_code}\n" -H "Host: front-api.local" http://127.0.0.1/ || echo "curl-failed"
 ```
 
-Expected: a 200 / 302 / 404 from PHP (i.e., nginx routed through to FPM). A 502 means nginx cannot reach FPM and A5 broke the path — re-add the `ports:` block on the affected container and investigate.
+預期：來自 PHP 的 200 / 302 / 404（代表 nginx 透過 FPM 成功路由）。如果是 502 代表 nginx 連不到 FPM，A5 弄壞了路徑 —— 重新加回 `ports:` 區塊並調查。
 
-- [ ] **Step 5: Verify SSH private key is read-only on both containers**
+- [ ] **Step 5：驗證兩個容器的 SSH 私鑰都是唯讀**
 
 ```bash
 for svc in php-fpm php-fpm8; do
@@ -407,16 +407,16 @@ for svc in php-fpm php-fpm8; do
 done
 ```
 
-Expected output:
+預期輸出：
 
 ```
 /root/.ssh/id_rsa RW=false
 /root/.ssh/id_rsa RW=false
 ```
 
-If `RW=true` for either, the `:ro` was not applied — re-check the edit and `docker compose up -d` to recreate the container.
+若任一行 `RW=true` 代表 `:ro` 沒生效 —— 檢查 Edit 結果並 `docker compose up -d` 重建容器。
 
-- [ ] **Step 6: Commit (commit #2 of 3)**
+- [ ] **Step 6：Commit（3 個 commit 中的第 2 個）**
 
 ```bash
 cd /Users/rb/Docker-Compose
@@ -434,26 +434,26 @@ git commit -m "chore: 統一 restart 策略、限制私鑰權限、補 .dockerig
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
-Verify:
+驗證：
 
 ```bash
 git show --stat HEAD
 ```
 
-Should list 2 files changed: `.dockerignore` (new), `docker-compose.yml` (modified).
+應列出兩個檔案異動：`.dockerignore`（新增）、`docker-compose.yml`（修改）。
 
 ---
 
-## Task 7: A6 — Strip non-essential tools from `php-fpm/Dockerfile`
+## Task 7：A6 — 從 `php-fpm/Dockerfile` 移除非必要工具
 
-**Files:**
-- Modify: `/Users/rb/Docker-Compose/php-fpm/Dockerfile`
+**檔案：**
+- 修改：`/Users/rb/Docker-Compose/php-fpm/Dockerfile`
 
-This task makes five surgical edits in one file. Apply them in the order below, top-to-bottom, so earlier edits do not invalidate later anchor strings.
+此 task 在同一檔案做 5 處精準編輯。**請由上往下依序套用**，避免前面的編輯讓後面的 anchor 失效。
 
-- [ ] **Step 1: Drop `zsh` from the apt system-packages list**
+- [ ] **Step 1：從 apt 套件清單移除 `zsh`**
 
-Use `Edit`:
+用 `Edit`：
 
 ```
 old_string:
@@ -466,7 +466,7 @@ new_string:
     default-mysql-client
 ```
 
-- [ ] **Step 2: Remove the Claude / Copilot CLI install**
+- [ ] **Step 2：移除 Claude / Copilot CLI 安裝**
 
 ```
 old_string:
@@ -479,9 +479,9 @@ new_string:
 # Install Google Cloud CLI
 ```
 
-Note: this leaves the next `# Install Google Cloud CLI` heading in place — Step 3 removes it.
+註：這一步保留下一段的 `# Install Google Cloud CLI` 標題，Step 3 再移除整段。
 
-- [ ] **Step 3: Remove the Google Cloud CLI install block**
+- [ ] **Step 3：移除 Google Cloud CLI 安裝區塊**
 
 ```
 old_string:
@@ -498,7 +498,7 @@ new_string:
 # Clear cache
 ```
 
-- [ ] **Step 4: Remove Oh My Zsh, plugin clones, plugin enablement, and `chsh`**
+- [ ] **Step 4：移除 Oh My Zsh、plugin clone、plugin 啟用、`chsh`**
 
 ```
 old_string:
@@ -528,9 +528,9 @@ new_string:
 # Timezone
 ```
 
-**Anchor check:** the php-fpm Dockerfile uses `ZSH_AUTOSUGGEST_STRATEGY=(history completion)`. The php-fpm8 Dockerfile may use a slightly different string — see Task 8 note 1.
+**Anchor 注意事項：** php-fpm 的 `ZSH_AUTOSUGGEST_STRATEGY` 行為 `(history completion)`；plugin 註解行為 `# Install zsh plugins: autosuggestions + syntax highlighting + completions`。php-fpm8 與這兩處可能略有不同 —— 詳見 Task 8 的 Step 0。
 
-- [ ] **Step 5: Drop the `.zshrc` half of the aliases install (`.bashrc` stays)**
+- [ ] **Step 5：移除 aliases 安裝中寫到 `.zshrc` 的部分（`.bashrc` 保留）**
 
 ```
 old_string:
@@ -552,44 +552,44 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
     echo "" >> /root/.bashrc
 ```
 
-- [ ] **Step 6: Verify no removed strings remain**
+- [ ] **Step 6：確認所有應移除的字串都已消失**
 
 ```bash
 cd /Users/rb/Docker-Compose
 grep -nE 'zsh|claude-code|@github/copilot|google-cloud|ohmyzsh|chsh' php-fpm/Dockerfile
 ```
 
-Expected: empty output.
+預期：輸出為空。
 
 ```bash
 wc -l php-fpm/Dockerfile
 tail -20 php-fpm/Dockerfile
 ```
 
-Expected: file should be ~75–80 lines (down from 141) and end with the timezone + aliases + `WORKDIR /var/www` block.
+預期：檔案約 75–80 行（由 141 行縮減），結尾為 timezone + aliases + `WORKDIR /var/www` 區塊。
 
 ---
 
-## Task 8: A6 — Strip non-essential tools from `php-fpm8/Dockerfile`
+## Task 8：A6 — 從 `php-fpm8/Dockerfile` 移除非必要工具
 
-**Files:**
-- Modify: `/Users/rb/Docker-Compose/php-fpm8/Dockerfile`
+**檔案：**
+- 修改：`/Users/rb/Docker-Compose/php-fpm8/Dockerfile`
 
-The five edits below are the same shape as Task 7 but each is repeated inline so this task can be executed independently. Apply in order top-to-bottom.
+以下 5 處編輯與 Task 7 形狀相同，但每段 inline 重複以便此 task 可獨立執行。**請由上往下依序套用**。
 
-- [ ] **Step 0: Capture the exact `ZSH_AUTOSUGGEST_STRATEGY` value used in this file**
+- [ ] **Step 0：先確認此檔案中的 `ZSH_AUTOSUGGEST_STRATEGY` 值**
 
-The two Dockerfiles may differ on this one line (`(history completion)` vs `(git completion)`). Run:
+兩個 Dockerfile 此處可能不同（`(history completion)` 或 `(git completion)`）。先看：
 
 ```bash
 grep -n 'ZSH_AUTOSUGGEST_STRATEGY' /Users/rb/Docker-Compose/php-fpm8/Dockerfile
 ```
 
-If the value differs from what Step 4 below shows, update the anchor in Step 4 to match before running the `Edit`.
+若實際值與 Step 4 anchor 中的不同，先把 Step 4 的 `old_string` 改成檔案的實際值，再執行 `Edit`，否則會比對失敗。
 
-- [ ] **Step 1: Drop `zsh` from the apt system-packages list**
+- [ ] **Step 1：從 apt 套件清單移除 `zsh`**
 
-Use `Edit` on `/Users/rb/Docker-Compose/php-fpm8/Dockerfile`:
+用 `Edit` 於 `/Users/rb/Docker-Compose/php-fpm8/Dockerfile`：
 
 ```
 old_string:
@@ -602,7 +602,7 @@ new_string:
     default-mysql-client
 ```
 
-- [ ] **Step 2: Remove the Claude / Copilot CLI install**
+- [ ] **Step 2：移除 Claude / Copilot CLI 安裝**
 
 ```
 old_string:
@@ -615,7 +615,7 @@ new_string:
 # Install Google Cloud CLI
 ```
 
-- [ ] **Step 3: Remove the Google Cloud CLI install block**
+- [ ] **Step 3：移除 Google Cloud CLI 安裝區塊**
 
 ```
 old_string:
@@ -632,7 +632,7 @@ new_string:
 # Clear cache
 ```
 
-- [ ] **Step 4: Remove Oh My Zsh, plugin clones, plugin enablement, and `chsh`**
+- [ ] **Step 4：移除 Oh My Zsh、plugin clone、plugin 啟用、`chsh`**
 
 ```
 old_string:
@@ -662,9 +662,9 @@ new_string:
 # Timezone
 ```
 
-**If Step 0 showed a different value for `ZSH_AUTOSUGGEST_STRATEGY` (e.g., `(git completion)`)**, change the corresponding line in `old_string` above before running the `Edit`, otherwise the match will fail. The plugin clone comment may also be `# Install zsh plugins: autosuggestions + syntax highlighting + completions` instead of the `(Fish-like history suggestions)` variant — adjust to match the file.
+**若 Step 0 顯示 `ZSH_AUTOSUGGEST_STRATEGY` 為不同值（如 `(git completion)`）**，先把上面 `old_string` 對應行改成實際值再執行 `Edit`，否則比對會失敗。Plugin 註解行也可能是 `# Install zsh plugins: autosuggestions + syntax highlighting + completions` 而非 `(Fish-like history suggestions)`，要對齊檔案實際值。
 
-- [ ] **Step 5: Drop the `.zshrc` half of the aliases install (`.bashrc` stays)**
+- [ ] **Step 5：移除 aliases 安裝中寫到 `.zshrc` 的部分（`.bashrc` 保留）**
 
 ```
 old_string:
@@ -686,7 +686,7 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
     echo "" >> /root/.bashrc
 ```
 
-- [ ] **Step 6: Verify no removed strings remain**
+- [ ] **Step 6：確認所有應移除的字串都已消失**
 
 ```bash
 cd /Users/rb/Docker-Compose
@@ -695,18 +695,18 @@ wc -l php-fpm8/Dockerfile
 tail -20 php-fpm8/Dockerfile
 ```
 
-Expected: empty grep output, file should be ~75–80 lines (down from 141) and end with the timezone + aliases + `WORKDIR /var/www` block.
+預期：grep 輸出為空，檔案約 75–80 行（由 141 行縮減），結尾為 timezone + aliases + `WORKDIR /var/www` 區塊。
 
 ---
 
-## Task 9: A6 — Remove host-mounted AI / cloud config volumes
+## Task 9：A6 — 移除 AI / 雲端設定的 host 卷掛載
 
-**Files:**
-- Modify: `/Users/rb/Docker-Compose/docker-compose.yml`
+**檔案：**
+- 修改：`/Users/rb/Docker-Compose/docker-compose.yml`
 
-- [ ] **Step 1: Strip `~/.claude` and `~/.copilot` from the `php-fpm` service**
+- [ ] **Step 1：從 `php-fpm` 服務移除 `~/.claude` 與 `~/.copilot`**
 
-Use `Edit`:
+用 `Edit`：
 
 ```
 old_string:
@@ -736,7 +736,7 @@ new_string:
             - ./php-fpm/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
 ```
 
-- [ ] **Step 2: Strip `~/.claude`, `~/.copilot`, `~/.config/gcloud` from the `php-fpm8` service**
+- [ ] **Step 2：從 `php-fpm8` 服務移除 `~/.claude`、`~/.copilot`、`~/.config/gcloud`**
 
 ```
 old_string:
@@ -767,38 +767,26 @@ new_string:
             - ./php-fpm8/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
 ```
 
-- [ ] **Step 3: Confirm no `.claude` / `.copilot` / `gcloud` mounts remain**
+- [ ] **Step 3：確認沒有 `.claude` / `.copilot` / `gcloud` 殘留**
 
 ```bash
 cd /Users/rb/Docker-Compose
 grep -nE '\.claude|\.copilot|gcloud' docker-compose.yml
 ```
 
-Expected: empty output.
+預期：輸出為空。
 
 ---
 
-## Task 10: A6 — Sync docs (`CLAUDE.md`, `AGENTS.md`)
+## Task 10：A6 — 同步文件（`CLAUDE.md`、`AGENTS.md`）
 
-**Files:**
-- Modify: `/Users/rb/Docker-Compose/CLAUDE.md` (one line)
-- Modify: `/Users/rb/Docker-Compose/AGENTS.md` (one line)
+**檔案：**
+- 修改：`/Users/rb/Docker-Compose/CLAUDE.md`（1 行）
+- 修改：`/Users/rb/Docker-Compose/AGENTS.md`（1 行）
 
-- [ ] **Step 1: Update `CLAUDE.md` security note**
+- [ ] **Step 1：更新 `CLAUDE.md` 安全注意事項段落**
 
-Use `Edit` on `/Users/rb/Docker-Compose/CLAUDE.md`:
-
-```
-old_string:
-- 容器內的 `~/.ssh/`、`~/.gitconfig`、`~/.claude` 為 host 端掛載，操作會影響 host
-
-new_string:
-- 容器內的 `~/.ssh/`、`~/.gitconfig` 為 host 端掛載，操作會影響 host
-```
-
-- [ ] **Step 2: Update `AGENTS.md` security note**
-
-Use `Edit` on `/Users/rb/Docker-Compose/AGENTS.md`:
+用 `Edit` 於 `/Users/rb/Docker-Compose/CLAUDE.md`：
 
 ```
 old_string:
@@ -808,22 +796,34 @@ new_string:
 - 容器內的 `~/.ssh/`、`~/.gitconfig` 為 host 端掛載，操作會影響 host
 ```
 
-- [ ] **Step 3: Confirm both files mention only `~/.ssh/` and `~/.gitconfig`**
+- [ ] **Step 2：更新 `AGENTS.md` 安全注意事項段落**
+
+用 `Edit` 於 `/Users/rb/Docker-Compose/AGENTS.md`：
+
+```
+old_string:
+- 容器內的 `~/.ssh/`、`~/.gitconfig`、`~/.claude` 為 host 端掛載，操作會影響 host
+
+new_string:
+- 容器內的 `~/.ssh/`、`~/.gitconfig` 為 host 端掛載，操作會影響 host
+```
+
+- [ ] **Step 3：確認兩個檔案中只提及 `~/.ssh/` 與 `~/.gitconfig`**
 
 ```bash
 cd /Users/rb/Docker-Compose
 grep -n -E '容器內的.*為 host 端掛載' CLAUDE.md AGENTS.md
 ```
 
-Expected: both lines show only `~/.ssh/` and `~/.gitconfig`, no `~/.claude`.
+預期：兩行都只有 `~/.ssh/` 與 `~/.gitconfig`，不再有 `~/.claude`。
 
 ---
 
-## Task 11: A6 — Rebuild images and run the full validation matrix
+## Task 11：A6 — 重建 image 並執行完整驗證矩陣
 
-**Files:** none modified; this is the spec §3 verification gate.
+**檔案：** 不修改任何檔案；此 task 是 spec §3 的驗證關卡。
 
-- [ ] **Step 1: Rebuild both PHP images**
+- [ ] **Step 1：重建兩個 PHP image**
 
 ```bash
 cd /Users/rb/Docker-Compose
@@ -831,18 +831,18 @@ docker compose build php-fpm php-fpm8
 echo "build_exit=$?"
 ```
 
-Expected: `build_exit=0`. Build should be noticeably faster than before (no Oh My Zsh clones, no gcloud apt install, no npm global install).
+預期：`build_exit=0`。Build 應該明顯比之前快（少了 Oh My Zsh clone、gcloud apt install、npm global install）。
 
-- [ ] **Step 2: Recreate containers so the new image and updated volumes take effect**
+- [ ] **Step 2：強制 recreate 容器讓新 image 與新的卷設定生效**
 
 ```bash
 docker compose up -d --force-recreate php-fpm php-fpm8
 docker compose ps php-fpm php-fpm8
 ```
 
-Expected: both `running`.
+預期：兩個容器都 `running`。
 
-- [ ] **Step 3: Run the removal-matrix check (4 binaries × 2 containers, independent reporting)**
+- [ ] **Step 3：執行工具移除矩陣（4 工具 × 2 容器，每項獨立報告）**
 
 ```bash
 for svc in php-fpm php-fpm8; do
@@ -853,11 +853,11 @@ for svc in php-fpm php-fpm8; do
 done
 ```
 
-Expected exactly 8 `ok:<svc>:<bin>` lines plus per-service `shell=` (non-zsh) and `alias_ok=/var/www/API_Frontend/_release`. Any `FAIL:` line indicates that container still has the binary — investigate, do not commit.
+預期：剛好 8 行 `ok:<svc>:<bin>`，加上每個服務各一行 `shell=`（不應為 `zsh`）以及 `alias_ok=/var/www/API_Frontend/_release`。任一 `FAIL:` 都代表該容器尚有殘留工具 —— 先查清楚再決定是否 commit。
 
-Note: `cdfront` resolves to `/var/www/API_Frontend/_release`. If this directory does not exist in your workspace, the `alias_ok=` line will be missing — that is **not** a failure of A6; it just means the workspace layout differs from CLAUDE.md.
+註：`cdfront` 指向 `/var/www/API_Frontend/_release`。如果你的 workspace 沒有這個目錄，`alias_ok=` 行就不會出現 —— 這**不算** A6 失敗，只代表 workspace 結構與 CLAUDE.md 不同。
 
-- [ ] **Step 4: Verify SSH private key is read-only on both containers (re-check after recreate)**
+- [ ] **Step 4：recreate 之後再驗證一次 SSH 私鑰唯讀**
 
 ```bash
 for svc in php-fpm php-fpm8; do
@@ -865,18 +865,18 @@ for svc in php-fpm php-fpm8; do
 done
 ```
 
-Expected: two lines, both `RW=false`.
+預期：兩行，都是 `RW=false`。
 
-- [ ] **Step 5: Smoke-test nginx → PHP-FPM path still works**
+- [ ] **Step 5：煙霧測試 nginx → PHP-FPM 仍可通**
 
 ```bash
 docker compose up -d web
 curl -sS -o /dev/null -w "%{http_code}\n" -H "Host: front-api.local" http://127.0.0.1/ || echo "curl-failed"
 ```
 
-Expected: 200 / 302 / 404 (anything from PHP); not 502.
+預期：200 / 302 / 404（任何來自 PHP 的回應）；不應為 502。
 
-- [ ] **Step 6: Render compose with example env to confirm A1 still valid**
+- [ ] **Step 6：再次以 example env 渲染 compose，確認 A1 仍正確**
 
 ```bash
 cp .env.example /tmp/.env.test
@@ -884,17 +884,17 @@ docker compose --env-file /tmp/.env.test config > /dev/null
 echo "exit=$?"
 ```
 
-Expected: `exit=0`.
+預期：`exit=0`。
 
-If any step in Task 11 fails, do **not** commit. Either fix the underlying issue in Tasks 7–10 and re-run, or revert in-progress edits and re-plan.
+如果 Task 11 任一步驟失敗，**不要** commit。回頭修 Tasks 7–10，或回退已動的編輯重新規劃。
 
 ---
 
-## Task 12: A6 — Commit (commit #3 of 3)
+## Task 12：A6 — Commit（3 個 commit 中的第 3 個）
 
-**Files:** none modified; commit work from Tasks 7–10.
+**檔案：** 不再修改檔案，commit Tasks 7–10 的成果。
 
-- [ ] **Step 1: Review staged changes**
+- [ ] **Step 1：檢視 staged 變更**
 
 ```bash
 cd /Users/rb/Docker-Compose
@@ -902,14 +902,14 @@ git status
 git diff --stat
 ```
 
-Expected modified files:
+預期修改檔案：
 - `php-fpm/Dockerfile`
 - `php-fpm8/Dockerfile`
 - `docker-compose.yml`
 - `CLAUDE.md`
 - `AGENTS.md`
 
-- [ ] **Step 2: Stage and commit**
+- [ ] **Step 2：Stage 並 commit**
 
 ```bash
 git add php-fpm/Dockerfile php-fpm8/Dockerfile docker-compose.yml CLAUDE.md AGENTS.md
@@ -933,52 +933,52 @@ build 都要 clone repo、跑 npm install -g、安裝 gcloud apt 套件，
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
-- [ ] **Step 3: Confirm commit**
+- [ ] **Step 3：確認 commit**
 
 ```bash
 git log --oneline -3
 git show --stat HEAD
 ```
 
-Expected: 5 files changed in HEAD, message starts with `refactor:`.
+預期：HEAD 有 5 個檔案異動，commit message 以 `refactor:` 開頭。
 
 ---
 
-## Task 13: Final integration check across all 3 commits
+## Task 13：3 個 commit 完成後的整合確認
 
-**Files:** none modified.
+**檔案：** 不修改檔案。
 
-- [ ] **Step 1: List the three new commits**
+- [ ] **Step 1：列出新增的三個 commit**
 
 ```bash
 cd /Users/rb/Docker-Compose
 git log --oneline -4
 ```
 
-Expected (top → bottom):
-1. `refactor: 移除 PHP 容器內 Oh My Zsh、gcloud、Claude/Copilot CLI 等非必要工具` (HEAD)
+預期（由上到下）：
+1. `refactor: 移除 PHP 容器內 Oh My Zsh、gcloud、Claude/Copilot CLI 等非必要工具`（HEAD）
 2. `chore: 統一 restart 策略、限制私鑰權限、補 .dockerignore 並收斂 FPM 對外 port`
 3. `chore: 對齊 .env.example 與 CLAUDE.md / .env 三方設定`
-4. The previous `docs:` commit for the A階段 spec update.
+4. 上一個 A 階段 spec 的 `docs:` commit。
 
-- [ ] **Step 2: Full final compose config render**
+- [ ] **Step 2：最終 compose config render**
 
 ```bash
 docker compose config > /dev/null
 echo "exit=$?"
 ```
 
-Expected: `exit=0`.
+預期：`exit=0`。
 
-- [ ] **Step 3: Final running state**
+- [ ] **Step 3：最終運行狀態**
 
 ```bash
 docker compose ps
 ```
 
-Expected: `web`, `php-fpm`, `php-fpm8`, `mysql`, `mysql8`, `redis` all running with `unless-stopped` restart policy. `api`, `open-webui` may or may not be running depending on user preference (not exercised by this plan).
+預期：`web`、`php-fpm`、`php-fpm8`、`mysql`、`mysql8`、`redis` 全部 running，restart 策略為 `unless-stopped`。`api`、`open-webui` 是否 running 視使用者習慣而定，本計畫不額外操作。
 
-- [ ] **Step 4: Confirm one more time that A6 removed everything**
+- [ ] **Step 4：再執行一次 A6 確認矩陣**
 
 ```bash
 for svc in php-fpm php-fpm8; do
@@ -988,18 +988,18 @@ for svc in php-fpm php-fpm8; do
 done
 ```
 
-Expected: 8 `ok:` lines. Plan complete.
+預期：8 行 `ok:`。計畫完成。
 
 ---
 
-## Rollback notes (if anything goes wrong)
+## 回退備忘（若出狀況）
 
-| Symptom | Likely cause | Rollback |
-|---------|--------------|----------|
-| `docker compose config` errors after Task 2/4/5 edits | Wrong indentation or stray text in `docker-compose.yml` | `git checkout docker-compose.yml`, re-apply edits one at a time |
-| 502 from nginx after A5 | Some PHP path was hitting host port 9000 directly | `git revert <commit-#2-sha>` (or re-add `ports:` block manually) |
-| Build failure in Task 11 Step 1 | One of the Dockerfile edits left dangling `\` or broken syntax | `git checkout php-fpm/Dockerfile php-fpm8/Dockerfile`, re-apply Task 7/8 |
-| Container shell still zsh after rebuild | Image cache | `docker compose build --no-cache php-fpm php-fpm8` then recreate |
-| `FAIL:<svc>:<bin>` in matrix | Edit missed in that container's Dockerfile | Re-apply Task 7 or 8 to the affected service, then rebuild |
+| 症狀 | 可能原因 | 回退方式 |
+|------|----------|----------|
+| Task 2/4/5 編輯後 `docker compose config` 報錯 | `docker-compose.yml` 縮排錯誤或多餘文字 | `git checkout docker-compose.yml`，逐項重做 |
+| A5 之後 nginx 出現 502 | 某條 PHP 路徑原本依賴 host 9000 直連 | `git revert <第 2 個 commit 的 sha>`（或手動加回 `ports:` 區塊） |
+| Task 11 Step 1 build 失敗 | 某次 Dockerfile 編輯留下殘餘 `\` 或語法錯 | `git checkout php-fpm/Dockerfile php-fpm8/Dockerfile`，重做 Task 7/8 |
+| rebuild 後容器內 shell 仍是 zsh | image cache | `docker compose build --no-cache php-fpm php-fpm8` 後 recreate |
+| 矩陣出現 `FAIL:<svc>:<bin>` | 某容器的 Dockerfile 編輯漏了一步 | 對應服務重做 Task 7 或 Task 8，再 rebuild |
 
-If multiple things break, prefer `git revert` on the affected commit over piecemeal fixes — the three commits were intentionally separated so each is independently revertible.
+若多處同時出問題，優先用 `git revert` 直接退掉該 commit，不要逐項零碎修補 —— 三個 commit 拆分就是為了任一可獨立回退。
