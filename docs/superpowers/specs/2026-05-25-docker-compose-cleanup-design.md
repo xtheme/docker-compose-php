@@ -1,8 +1,8 @@
 # Docker-Compose 環境優化 — A 階段：設定整理 / 安全性
 
 - 日期：2026-05-25
-- 範圍：僅 A 階段（低風險、不重建 image）
-- 後續：B（映像檔精簡）、C（效能 / DX）為獨立階段，本 spec 不涵蓋
+- 範圍：A 階段 + A6（PHP 容器 image 內非必要工具移除，提前自 B 階段抽出）
+- 後續：B（映像檔進一步精簡 / 去重）、C（效能 / DX）為獨立階段，本 spec 不涵蓋
 
 ## 1. 目標
 
@@ -125,17 +125,63 @@ AGENTS.md
 
 `api` (Swoole) 的 `"9501:9501"` **不動**，因為直接從 host 打 Swoole 測試是常見做法。
 
+### A6 — 移除 PHP 容器內非必要工具
+
+**動機**：Oh My Zsh、Google Cloud CLI、Claude/Copilot CLI 在容器內幾乎不使用（日常開發都在 host 端進行），但每次 `docker build` 都要 clone repo、執行遠端安裝腳本、跑 `npm install -g` 與 `apt-get install google-cloud-cli`，維護成本高、build 時間長、image 體積大。
+
+**Dockerfile 變更**（`php-fpm/Dockerfile` 與 `php-fpm8/Dockerfile` 兩者同步）：
+
+| 區塊 | 變更 |
+|------|------|
+| 系統套件區塊（line 5–22） | 從 `apt-get install` 清單移除 `zsh` |
+| Claude / Copilot CLI（line 90–92） | 整段 `RUN npm install -g @anthropic-ai/claude-code @github/copilot` 移除 |
+| Google Cloud CLI（line 94–99） | 整段 gcloud apt repo 加入與 `apt-get install -y google-cloud-cli` 移除 |
+| Oh My Zsh 與 plugin（line 104–122） | 完整移除 Oh My Zsh 安裝、3 個 plugin 的 `git clone`、`.zshrc` plugin 啟用、`chsh -s $(which zsh)` |
+| aliases 寫入 `.zshrc`（line 136–139） | 移除（只保留寫入 `.bashrc` 部分） |
+
+最終 PHP 容器內 shell 為 `bash`（`php:*-fpm` 官方 image 預設），`aliases.sh` 透過 `.bashrc` 載入。
+
+**`docker-compose.yml` 變更**：
+
+| service | 移除掛載 |
+|---------|----------|
+| `php-fpm` | `~/.claude:/root/.claude` |
+| `php-fpm` | `~/.copilot:/root/.copilot` |
+| `php-fpm8` | `~/.claude:/root/.claude` |
+| `php-fpm8` | `~/.copilot:/root/.copilot` |
+| `php-fpm8` | `~/.config/gcloud:/root/.config/gcloud` |
+
+**文件同步變更**：
+
+- `CLAUDE.md`「安全注意事項」段落：將「容器內的 `~/.ssh/`、`~/.gitconfig`、`~/.claude` 為 host 端掛載」改為「`~/.ssh/`、`~/.gitconfig` 為 host 端掛載」
+- 若 `AGENTS.md` 有對應內容（實作時掃描確認），同步修正
+
+**不動的部分**：
+
+- `aliases.sh` 內容（`cdfront` 等別名仍可用）
+- `default-mysql-client` 套件（容器內 `mysql57` / `mysql80` 別名需要）
+- 其他開發必要套件（`git`、`composer`、`nodejs` 等）
+
+**已知影響**：
+
+- 容器內無法直接執行 `claude` / `copilot` / `gcloud` 指令 — 若有 host 端 script 透過 `docker compose exec` 跑這三個 CLI，需先改回 host 端執行
+- 容器內 shell 不再有 zsh 補全 / 高亮 — 個人習慣調整
+- 對應 commit `d84a32a`（升級 Zsh）與 `2b30853`（雙 shell）會被反向，commit message 需提及
+
 ## 3. 驗證計畫
 
 實作後依序執行：
 
 1. `git diff` 檢視變更與本 spec 一致
 2. `docker compose config` — 確認 compose 檔合法、變數展開正確
-3. `docker compose down && docker compose up -d web php-fpm php-fpm8 mysql mysql8 redis` — 重啟核心服務
-4. 從 host 瀏覽器存取任一虛擬主機（如 `front-api.local`），確認 nginx → php-fpm 鏈路仍通
-5. 在 `php-fpm8` 容器內執行 `mysql80` 別名連線 → 確認 DB 通
-6. 確認 `docker inspect php-fpm | grep -A2 Mounts` 中 `id_rsa` 有 `"RW": false`
-7. `cp .env.example /tmp/.env.test && docker compose --env-file /tmp/.env.test config` — 驗證 example 可獨立 render
+3. `docker compose build php-fpm php-fpm8` — A6 需重建 image，確認 build 成功
+4. `docker compose down && docker compose up -d web php-fpm php-fpm8 mysql mysql8 redis` — 重啟核心服務
+5. 從 host 瀏覽器存取任一虛擬主機（如 `front-api.local`），確認 nginx → php-fpm 鏈路仍通
+6. 在 `php-fpm8` 容器內執行 `mysql80` 別名連線 → 確認 DB 通
+7. 在 `php-fpm8` 容器內執行 `which zsh && which claude && which gcloud` → 三者皆應 not found（A6 驗證）
+8. 在 `php-fpm8` 容器內 `echo $SHELL` 確認為 `/bin/bash`；`cdfront && pwd` 確認別名仍 work
+9. 確認 `docker inspect php-fpm | grep -A2 Mounts` 中 `id_rsa` 有 `"RW": false`
+10. `cp .env.example /tmp/.env.test && docker compose --env-file /tmp/.env.test config` — 驗證 example 可獨立 render
 
 ## 4. 風險與回退
 
@@ -144,15 +190,20 @@ AGENTS.md
 | 開發機某流程依賴 host 端 9000 / 9001 連 FPM | 低 | 該流程中斷 | git revert 該變更 commit |
 | `.dockerignore` 規則誤殺需要 COPY 的檔案 | 低 | 對應 service build 失敗 | 調整規則，本 spec 不影響現有 build context |
 | `restart: always` → `unless-stopped` 在 host 重開機後不會自啟 | 低 | 需手動 `docker compose up -d` | 個別服務改回 `always` |
+| A6 移除工具後，舊有 docker-compose exec 腳本依賴失敗 | 低 | 該腳本中斷 | 改用 host 端執行；或 git revert A6 commit |
+| `chsh -s $(which zsh)` 移除後 root 預設 shell 殘留為 zsh（image 內未升級時） | 低 | 既有容器直到 rebuild 前仍為 zsh | `docker compose build --no-cache php-fpm php-fpm8` 強制重建 |
 
 ## 5. 提交策略
 
-拆為 2 個 commit，依「設定資料」與「行為 / 安全性」分組，便於日後 bisect 與回退：
+拆為 3 個 commit，便於日後 bisect 與回退：
 
 1. `chore: 對齊 .env.example 與 CLAUDE.md / .env 三方設定`（A1）
 2. `chore: 統一 restart 策略、限制私鑰權限、補 .dockerignore 並收斂 FPM 對外 port`（A2 + A3 + A4 + A5）
+3. `refactor: 移除 PHP 容器內 Oh My Zsh、gcloud、Claude/Copilot CLI 等非必要工具`（A6 + 同步 CLAUDE.md / AGENTS.md）
+
+A6 獨立 commit 的原因：需 rebuild image，影響範圍與前兩個 commit 不同；獨立 commit 可在發現問題時單獨回退而不影響 A1–A5 的設定整理成果。
 
 ## 6. 後續階段（不在本 spec）
 
-- **B 階段**：抽出 `php-fpm` / `php-fpm8` 共用 base image、合併 RUN layer、裁減未用擴充、pin 版本
+- **B 階段**：抽出 `php-fpm` / `php-fpm8` 共用 base image、合併 RUN layer、裁減未用 PHP 擴充與系統套件（`ffmpeg`、`wrk`、未使用的 PHP 擴充等）、pin 版本
 - **C 階段**：Xdebug trigger 模式、MySQL buffer pool、healthcheck、compose profiles 分組
