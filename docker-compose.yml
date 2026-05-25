@@ -14,7 +14,7 @@ services:
             - ./nginx/logs:/var/log/nginx
         depends_on:
             - php-fpm
-        restart: always
+        restart: unless-stopped
         networks:
             - default
 
@@ -27,12 +27,10 @@ services:
                 - NODEJS_VERSION=${NODEJS_VERSION}
                 - TZ=${TIMEZONE}
         container_name: php-fpm
-        ports:
-            - "9000:9000"
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
-            - ${SSH_KEY_PATH}:/root/.ssh/id_rsa
+            - ${SSH_KEY_PATH}:/root/.ssh/id_rsa:ro
             - ${SSH_KEY_PATH}.pub:/root/.ssh/id_rsa.pub:ro
             - ~/.ssh/known_hosts:/root/.ssh/known_hosts
             - ~/.gitconfig:/root/.gitconfig:ro
@@ -105,12 +103,10 @@ services:
                 - NODEJS_VERSION=${NODEJS_VERSION}
                 - TZ=${TIMEZONE}
         container_name: php-fpm8
-        ports:
-            - "9001:9000"
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm8/ini/php${PHP8_VERSION}.ini:/usr/local/etc/php/php.ini
-            - ${SSH_KEY_PATH}:/root/.ssh/id_rsa
+            - ${SSH_KEY_PATH}:/root/.ssh/id_rsa:ro
             - ${SSH_KEY_PATH}.pub:/root/.ssh/id_rsa.pub:ro
             - ~/.ssh/known_hosts:/root/.ssh/known_hosts
             - ~/.gitconfig:/root/.gitconfig:ro
@@ -171,7 +167,7 @@ services:
     open-webui:
         image: ghcr.io/open-webui/open-webui:main
         container_name: open-webui
-        restart: always
+        restart: unless-stopped
         ports:
             - "3000:8080"
         extra_hosts:
