@@ -26,13 +26,9 @@
 | `MYSQL_PORT` | `3306` | `3305` | 對齊 CLAUDE.md「MySQL 5.7 對外埠為 3305」與實際 `.env` |
 | `MYSQL8_PORT` | `3308` | `3306` | 對齊 CLAUDE.md「MySQL 8.0 為 3306」與實際 `.env` |
 | `NODEJS_VERSION` | `23` | `20` | 對齊實際 `.env`，CLAUDE.md 表格也記 `16 或 23`，實際多用 LTS |
-| 新增 `MYSQL8_DATABASE` | — | `database` | `.env` 已有但 example 缺；docker-compose.yml 透過 `MYSQL_DATABASE` 共用 → 詳見備註 |
-| 新增 `MYSQL8_USER` | — | `user` | 同上 |
-| 新增 `MYSQL8_PASSWORD` | — | `pass` | 同上 |
-| 新增 `MYSQL8_ROOT_PASSWORD` | — | `pass` | 同上 |
 | 移除 ClickHouse 註解 | `#CLICKHOUSE_USER=...` | (刪除) | 目前 compose 已無 ClickHouse 服務；git history 仍可查 |
 
-**備註**：目前 `docker-compose.yml` 的 `mysql8` service 仍使用 `MYSQL_DATABASE`、`MYSQL_USER` 等共用變數。`.env.example` 補上 `MYSQL8_*` 是為了「對齊實際 `.env` 內容」，**本 spec 不修改 compose 檔讓 mysql8 改用 `MYSQL8_*` 變數**（避免影響現有資料庫初始化行為）。是否切換到獨立變數留給 C 階段或之後評估。
+**關於 `MYSQL8_*` 變數**：目前 `docker-compose.yml` 的 `mysql8` service 與 `mysql` 共用 `MYSQL_DATABASE` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_ROOT_PASSWORD`。**本 spec 不在 `.env.example` 新增 `MYSQL8_*`**：若加上但 compose 未消費，會誤導開發者以為改了該值會生效，且 MySQL 初始化環境變數只在 volume 首次建立時起作用，事後發現偏差需 root 手動修正或破壞性重建 volume。是否拆成獨立 `MYSQL8_*` 變數（含 compose 變更與既有 volume 的遷移處理）留給後續階段評估。
 
 ### A2 — 統一 restart policy
 
@@ -178,10 +174,30 @@ AGENTS.md
 4. `docker compose down && docker compose up -d web php-fpm php-fpm8 mysql mysql8 redis` — 重啟核心服務
 5. 從 host 瀏覽器存取任一虛擬主機（如 `front-api.local`），確認 nginx → php-fpm 鏈路仍通
 6. 在 `php-fpm8` 容器內執行 `mysql80` 別名連線 → 確認 DB 通
-7. 在 `php-fpm8` 容器內執行 `which zsh && which claude && which gcloud` → 三者皆應 not found（A6 驗證）
-8. 在 `php-fpm8` 容器內 `echo $SHELL` 確認為 `/bin/bash`；`cdfront && pwd` 確認別名仍 work
-9. 確認 `docker inspect php-fpm | grep -A2 Mounts` 中 `id_rsa` 有 `"RW": false`
-10. `cp .env.example /tmp/.env.test && docker compose --env-file /tmp/.env.test config` — 驗證 example 可獨立 render
+7. **A6 工具移除驗證（兩容器 × 全工具矩陣，每項獨立報告，避免 `&&` 鏈短路）**：
+
+   ```bash
+   for svc in php-fpm php-fpm8; do
+     for bin in zsh claude copilot gcloud; do
+       docker compose exec -T "$svc" sh -c "command -v $bin >/dev/null && echo FAIL:$svc:$bin || echo ok:$svc:$bin"
+     done
+     docker compose exec -T "$svc" sh -c 'echo "shell=$0"; cdfront >/dev/null 2>&1 && echo "alias_ok=$(pwd)"'
+   done
+   ```
+
+   預期：4 × 2 = 8 行 `ok:<svc>:<bin>`，`shell=` 行非 `zsh`，`alias_ok=/var/www/API_Frontend/_release`。任一 `FAIL:` 即代表該容器有殘留工具。
+
+8. **A4 SSH 私鑰唯讀驗證（兩容器都查）**：
+
+   ```bash
+   for svc in php-fpm php-fpm8; do
+     docker inspect "$svc" --format '{{range .Mounts}}{{if eq .Destination "/root/.ssh/id_rsa"}}{{.Destination}} RW={{.RW}}{{println}}{{end}}{{end}}'
+   done
+   ```
+
+   預期：兩行皆 `/root/.ssh/id_rsa RW=false`。
+
+9. `cp .env.example /tmp/.env.test && docker compose --env-file /tmp/.env.test config` — 驗證 example 可獨立 render
 
 ## 4. 風險與回退
 
