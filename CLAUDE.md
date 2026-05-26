@@ -14,7 +14,6 @@
 | 資料庫 (舊) | MySQL | 5.7 |
 | 資料庫 (新) | MySQL8 | 8.0.30 |
 | 快取 | Redis | latest |
-| LLM UI | open-webui | main（連 host 端 Ollama）|
 
 ## 目錄結構
 

@@ -142,24 +142,6 @@ services:
         networks:
             - default
 
-    open-webui:
-        image: ghcr.io/open-webui/open-webui:main
-        container_name: open-webui
-        restart: unless-stopped
-        ports:
-            - "3000:8080"
-        extra_hosts:
-            - "host.docker.internal:host-gateway"
-        volumes:
-            - open-webui:/app/backend/data
-        environment:
-            - 'OLLAMA_BASE_URL=http://host.docker.internal:11434'
-        networks:
-            - default
-
 networks:
     default:
         driver: bridge
-
-volumes:
-    open-webui:

@@ -12,7 +12,6 @@
 | `mysql` | MySQL 5.7 | 3305 |
 | `mysql8` | MySQL 8.0 | 3306 |
 | `redis` | Redis | 6379 |
-| `open-webui` | Open WebUI（連 host 端 Ollama） | 3000 |
 
 ## 快速啟動
 
