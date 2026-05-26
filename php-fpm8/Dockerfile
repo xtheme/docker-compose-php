@@ -80,11 +80,18 @@ RUN if [ $(echo "$PHP_VERSION < 8" | bc) -eq 1 ]; then \
         composer self-update --1; \
     fi
 
-# Install NodeJs 16.x
+# Install NodeJS (latest Active LTS via NodeSource setup_lts.x;
+# 若需鎖版本可在 .env 設 NODEJS_VERSION=<major>)
 ARG NODEJS_VERSION
-RUN apt-get update -yq \
-    && curl -sL https://deb.nodesource.com/setup_${NODEJS_VERSION}.x | bash \
-    && apt-get install nodejs -yq
+RUN set -eux; \
+    if [ -n "$NODEJS_VERSION" ]; then \
+        ENDPOINT="setup_${NODEJS_VERSION}.x"; \
+    else \
+        ENDPOINT="setup_lts.x"; \
+    fi; \
+    apt-get update -yq; \
+    curl -fsSL https://deb.nodesource.com/${ENDPOINT} | bash -; \
+    apt-get install -yq nodejs
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

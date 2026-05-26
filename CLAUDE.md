@@ -56,7 +56,7 @@ cp .env.example .env
 | `PHP_VERSION` | PHP 7.x 版本 | `7.3` |
 | `PHP8_VERSION` | PHP 8.x 版本 | `8.4` |
 | `TIMEZONE` | 時區 | `Asia/Shanghai` |
-| `NODEJS_VERSION` | NodeJS 版本 | `16` 或 `23` |
+| `NODEJS_VERSION` | NodeJS major 版本（留空 = 自動安裝當前 Active LTS） | 留空 |
 | `MYSQL_PORT` | MySQL 5.7 外部埠 | `3305` |
 | `MYSQL8_PORT` | MySQL 8.0 外部埠 | `3306` |
 | `REDIS_PORT` | Redis 埠 | `6379` |
