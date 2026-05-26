@@ -1,9 +1,22 @@
 # PHP 7.3 image 無法 rebuild：install-php-extensions 抓 PECL yaml metadata 失敗
 
-**狀態：** open
+**狀態：** resolved（2026-05-26，採方案 C）
 **發現日期：** 2026-05-25
 **影響範圍：** `docker compose build php-fpm`（PHP 7.3）
 **不影響：** `docker compose build php-fpm8`（PHP 8.4 同 Dockerfile pattern build 成功）
+
+## 解決方式
+
+採方案 C：從 `php-fpm/Dockerfile` 的 `install-php-extensions` 清單移除 `yaml`。
+盤點 `~/Workspace/{API_Agent,API_External,API_Frontend,api-internal,RD-Studio-01,
+WEB_CustomerServiceSocket}/_release` 6 個 PHP 7.3 服務：
+
+- 0 個 `composer.json` / `composer.lock` 宣告 `ext-yaml`
+- vendor 內全部 PHP 檔（合計約 32,688 個）grep `yaml_(parse|emit|parse_file|emit_file|parse_url)` 命中 0
+
+代表 PHP 7.3 容器內的 yaml extension 從未被使用，整個依賴可以直接拿掉。
+拿掉後 `docker compose build php-fpm` 通過，PHP 7.3.33 容器正常啟動，
+nginx → php-fpm 9000 經 front-api.local 取得 HTTP 200。
 
 ---
 

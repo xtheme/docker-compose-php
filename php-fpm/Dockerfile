@@ -62,7 +62,6 @@ RUN set -eux; \
     xlswriter \
     xsl \
     yac \
-    yaml \
     zip
 
 # Copy php.ini for current PHP version (截取 major.minor，排除 patch 版本號)
