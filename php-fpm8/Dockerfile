@@ -25,7 +25,6 @@ ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/do
 RUN set -eux; \
     chmod +x /usr/local/bin/install-php-extensions; \
     install-php-extensions \
-    amqp \
     apcu \
     bcmath \
     bz2 \
@@ -48,8 +47,6 @@ RUN set -eux; \
     opcache \
     pcntl \
     pdo_mysql \
-    pdo_pgsql \
-    pgsql \
     redis \
     sockets \
     swoole \
