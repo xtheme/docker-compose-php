@@ -79,9 +79,8 @@ RUN set -eux; \
     else \
         ENDPOINT="setup_lts.x"; \
     fi; \
-    apt-get update -yq; \
     curl -fsSL https://deb.nodesource.com/${ENDPOINT} | bash -; \
-    apt-get install -yq nodejs
+    apt-get install -y nodejs
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
