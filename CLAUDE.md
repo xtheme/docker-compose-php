@@ -2,7 +2,7 @@
 
 ## 專案概述
 
-這是一個用於本地開發的 Docker 容器編排環境，支援多版本 PHP、MySQL、Redis 等服務。主要服務對象為 Laravel 與 Hyperf 框架的應用開發。
+這是一個用於本地開發的 Docker 容器編排環境，支援多版本 PHP、MySQL、Redis 等服務。主要服務對象為 Laravel 框架的應用開發。
 
 ## 技術棧
 
@@ -11,7 +11,6 @@
 | Web 伺服器 | Nginx | alpine |
 | PHP (舊版) | PHP-FPM | 7.3 (預設) |
 | PHP (新版) | PHP-FPM8 | 8.4 |
-| 非同步框架 | PHP-Swoole (Hyperf) | 8.3 |
 | 資料庫 (舊) | MySQL | 5.7 |
 | 資料庫 (新) | MySQL8 | 8.0.30 |
 | 快取 | Redis | latest |
@@ -34,7 +33,6 @@ Docker-Compose/
 │   ├── ini/             # 各 PHP 版本的 php.ini
 │   └── php-fpm.d/       # FPM 進程池設定
 ├── php-fpm8/            # PHP 8.x 容器
-├── php-swoole/          # PHP-Swoole (Hyperf) 容器
 ├── mysql/               # MySQL 5.7
 ├── mysql8/              # MySQL 8.0
 └── redis/               # Redis

@@ -52,21 +52,6 @@ services:
         networks:
             - default
 
-    # PHP-Swoole workspace for api service
-    api:
-        build:
-            context: ./php-swoole
-        container_name: api
-        platform: linux/x86_64
-        volumes:
-            - ${WORKSPACE_PATH}:/var/www:cached
-        ports:
-            - "9501:9501"
-        tty: true
-        restart: unless-stopped
-        networks:
-            - default
-
     # MySQL database service
     mysql:
         platform: linux/amd64
