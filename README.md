@@ -25,3 +25,13 @@ docker compose up -d web php-fpm php-fpm8 mysql mysql8 redis
 # 3. 進容器執行命令（範例）
 docker compose exec php-fpm8 bash
 ```
+
+## APIs 專案啟動
+
+`~/Workspace/APIs` 使用 PHP 8.4，由 `apis.local` 經 nginx 路由到 `php-fpm8`：
+
+```bash
+docker compose up -d web php-fpm8 mysql8 redis
+```
+
+DB 預設連遠端；要改用本機 MySQL 8.0，調整 APIs `.env` 內 `LOCAL_DB_HOST_*` 即可。
