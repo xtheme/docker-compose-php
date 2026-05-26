@@ -19,8 +19,8 @@ RUN set -eux; \
     ffmpeg \
     default-mysql-client
 
-# Add docker php ext repo
-ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+# Add docker php ext repo (pin version, /releases/latest/ 會踩到上游突變如 PECL yaml)
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/download/2.11.1/install-php-extensions /usr/local/bin/
 
 RUN set -eux; \
     chmod +x /usr/local/bin/install-php-extensions; \
