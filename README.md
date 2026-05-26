@@ -25,9 +25,3 @@ docker compose up -d web php-fpm php-fpm8 mysql mysql8 redis
 # 3. 進容器執行命令（範例）
 docker compose exec php-fpm8 bash
 ```
-
-## 進一步閱讀
-
-- [`CLAUDE.md`](CLAUDE.md) — 專案完整說明、開發流程、容器內別名、Xdebug、Commit 規範等細節（也是 Claude / AI agent 工作的指南）
-- [`AGENTS.md`](AGENTS.md) — 同 CLAUDE.md，供通用 AI agent 使用
-- [`.env.example`](.env.example) — 環境變數範本
