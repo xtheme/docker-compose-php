@@ -46,7 +46,6 @@ services:
             - "internal-api.local:host-gateway"
             - "socket-api.local:host-gateway"
             - "agent-web.local:host-gateway"
-            - "socket-web.local:host-gateway"
             - "apis.local:host-gateway"
         tty: true
         restart: unless-stopped
@@ -120,7 +119,6 @@ services:
             - "front-api.local:host-gateway"
             - "internal-api.local:host-gateway"
             - "socket-api.local:host-gateway"
-            - "socket-web.local:host-gateway"
             - "apis.local:host-gateway"
         tty: true
         restart: unless-stopped
