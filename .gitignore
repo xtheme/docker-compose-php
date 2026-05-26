@@ -3,11 +3,6 @@
 .idea/
 /mysql/data/*
 /mysql/log/*
-/clickhouse/data/*
-/clickhouse/log/*
-/elasticsearch/*
-/gitlab-runner/config/*
-/rabbitmq/data/*
 /mysql8/data/*
 /mysql8/log/*
 *.log
