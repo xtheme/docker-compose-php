@@ -17,8 +17,6 @@
 | 資料庫 (舊) | MySQL | 5.7 |
 | 資料庫 (新) | MySQL8 | 8.0.30 |
 | 快取 | Redis | latest |
-| 訊息佇列 | RabbitMQ | 3.11（已停用，可選）|
-| CI/CD | GitLab Runner | latest（已停用，可選）|
 | LLM UI | open-webui | main（連 host 端 Ollama）|
 
 ## 目錄結構
@@ -41,9 +39,7 @@ Docker-Compose/
 ├── php-swoole/          # PHP-Swoole (Hyperf) 容器
 ├── mysql/               # MySQL 5.7
 ├── mysql8/              # MySQL 8.0
-├── redis/               # Redis
-├── rabbitmq/            # RabbitMQ（可選）
-└── gitlab-runner/       # GitLab Runner（可選）
+└── redis/               # Redis
 ```
 
 ## 環境變數
@@ -189,7 +185,6 @@ chore: 設定 MySQL 8 預設時區為 UTC
 ## 其他注意事項
 
 - 修改 Dockerfile 後需重新建置：`docker-compose up -d --build <service>`
-- RabbitMQ 與 GitLab Runner 預設停用，需要時在 `docker-compose.yml` 取消註解
 - MySQL 5.7 對外埠為 `3305`，MySQL 8.0 為 `3306`（可在 `.env` 調整）
 - MySQL 8 預設時區為 **UTC**（commit `aed66d6`）；MySQL 5.7 沿用 `TIMEZONE`（`Asia/Shanghai`）
 - PHP 8.4 已停用 `session.sid_*` 相關設定，請勿在 `php.ini` 加回（commit `4fd1111`）
