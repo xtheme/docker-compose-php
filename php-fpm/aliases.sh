@@ -8,7 +8,7 @@ alias tinker="php artisan tinker"
 alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'
 
 # MySQL 連接別名
-alias mysql57="mysql -h mysql -P 3305 -u root -p"
+alias mysql57="mysql -h mysql -P 3306 -u root -p"
 alias mysql80="mysql -h mysql8 -P 3306 -u root -p"
 
 alias cdagent="cd /var/www/API_Agent/_release"
