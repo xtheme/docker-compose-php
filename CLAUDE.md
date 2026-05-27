@@ -52,7 +52,7 @@ cp .env.example .env
 | `WORKSPACE_PATH` | 應用程式碼根目錄 | `../www` |
 | `PHP_VERSION` | PHP 7.x 版本 | `7.3` |
 | `PHP8_VERSION` | PHP 8.x 版本 | `8.4` |
-| `TIMEZONE` | 時區 | `Asia/Shanghai` |
+| `TIMEZONE` | 時區（同時套用至 php-fpm/php-fpm8/mysql/mysql8） | `UTC` |
 | `NODEJS_VERSION` | NodeJS major 版本（留空 = 自動安裝當前 Active LTS） | 留空 |
 | `MYSQL_PORT` | MySQL 5.7 外部埠 | `3305` |
 | `MYSQL8_PORT` | MySQL 8.0 外部埠 | `3306` |
@@ -181,7 +181,7 @@ chore: 設定 MySQL 8 預設時區為 UTC
 
 - 修改 Dockerfile 後需重新建置：`docker-compose up -d --build <service>`
 - MySQL 5.7 對外埠為 `3305`，MySQL 8.0 為 `3306`（可在 `.env` 調整）
-- MySQL 8 預設時區為 **UTC**（commit `aed66d6`）；MySQL 5.7 沿用 `TIMEZONE`（`Asia/Shanghai`）
+- 所有服務（php-fpm/php-fpm8/mysql/mysql8）時區統一由 `.env` 的 `TIMEZONE` 控制，預設 `UTC`
 - PHP 8.4 已停用 `session.sid_*` 相關設定，請勿在 `php.ini` 加回（commit `4fd1111`）
 - SSH key 走 `~/.ssh/id_ed25519`（搭配私服 GitLab `gitlab.terpro.com:1022`）；`.env.example` 內 `id_rsa` 為通用範例
 

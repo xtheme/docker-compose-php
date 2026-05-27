@@ -25,7 +25,7 @@ services:
             args:
                 - PHP_VERSION=${PHP_VERSION}
                 - NODEJS_VERSION=${NODEJS_VERSION}
-                - TZ=${TIMEZONE}
+                - TIMEZONE=${TIMEZONE}
         container_name: php-fpm
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
@@ -83,7 +83,7 @@ services:
             args:
                 - PHP_VERSION=${PHP8_VERSION}
                 - NODEJS_VERSION=${NODEJS_VERSION}
-                - TZ=${TIMEZONE}
+                - TIMEZONE=${TIMEZONE}
         container_name: php-fpm8
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
