@@ -54,6 +54,7 @@ cp .env.example .env
 | `PHP8_VERSION` | PHP 8.x 版本 | `8.4` |
 | `TIMEZONE` | 時區（同時套用至 php-fpm/php-fpm8/mysql/mysql8） | `UTC` |
 | `NODEJS_VERSION` | NodeJS major 版本（留空 = 自動安裝當前 Active LTS） | 留空 |
+| `INSTALL_ZSH` | 是否在 php-fpm / php-fpm8 容器內安裝 zsh（`true` / `false`） | `false` |
 | `MYSQL_PORT` | MySQL 5.7 外部埠 | `3305` |
 | `MYSQL8_PORT` | MySQL 8.0 外部埠 | `3306` |
 | `REDIS_PORT` | Redis 埠 | `6379` |

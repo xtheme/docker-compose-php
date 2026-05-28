@@ -99,4 +99,14 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
     echo "source /root/aliases.sh" >> /root/.bashrc && \
     echo "" >> /root/.bashrc
 
+# Optional: zsh（.env 設 INSTALL_ZSH=true 啟用；aliases.sh 內已有 ZSH_VERSION 分支）
+ARG INSTALL_ZSH=false
+RUN set -eux; \
+    if [ "$INSTALL_ZSH" = "true" ]; then \
+        apt-get update && \
+        apt-get install -y --no-install-recommends zsh && \
+        apt-get clean && rm -rf /var/lib/apt/lists/* && \
+        printf '# Load Custom Aliases\nsource /root/aliases.sh\n' > /root/.zshrc; \
+    fi
+
 WORKDIR /var/www
