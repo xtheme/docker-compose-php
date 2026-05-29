@@ -61,9 +61,9 @@ cp .env.example .env
 
 ## 開發工作流程（重要）
 
-1. **進容器執行命令**：`~/Workspace/*` 子專案的 `git` / `composer` / `php` / `artisan` 操作須進 `php-fpm8` 容器執行，不要在 host 端直接跑（避免 PHP 版本與權限差異）。
+1. **PHP 相關命令進容器執行**：`~/Workspace/*` 子專案的 `composer` / `php` / `artisan` 操作須進 `php-fpm8` 容器執行，不要在 host 端直接跑（避免 PHP 版本與權限差異）。**`git`（含 commit / push）在 host 端直接做即可，不需進容器**（git 不依賴 PHP；hooks 安裝在 repo 的 `.git/hooks`，host 端一樣會觸發）。
 2. **容器間連線用服務名稱**：應用連 DB / Redis 一律用 `mysql`、`mysql8`、`redis`，不用 `localhost`。
-3. **標準步驟**：進容器 → `cdXxx` 切目錄 → 執行 → 驗證。
+3. **標準步驟**：PHP 命令進容器 → `cdXxx` 切目錄 → 執行 → 驗證；git 直接在 host 對應路徑操作。
 4. **GitLab 憑證**：本機 GitLab 私服為 `gitlab.terpro.com:1022`（非 gitlab.com），SSH key `~/.ssh/id_ed25519` 已透過 volume 掛入 php-fpm 容器。
 
 ## 容器內別名（php-fpm / php-fpm8）
