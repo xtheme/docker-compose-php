@@ -1,61 +1,61 @@
 services:
     # Nginx service
-    nginx:
+    web:
         image: nginx:alpine
-        container_name: nginx
+        container_name: web
         ports:
             - "80:80"
             - "443:443"
         volumes:
-            - ${WORKSPACE_PATH}:/var/www
-            - ./nginx/sites/:/etc/nginx/conf.d
+            - ${WORKSPACE_PATH}:/var/www:cached
+            - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+            - ./nginx/upstream.conf:/etc/nginx/conf.d/upstream.conf:ro
+            - ./nginx/sites/:/etc/nginx/sites-available:ro
             - ./nginx/logs:/var/log/nginx
-        restart: always
+        depends_on:
+            - php-fpm
+        restart: unless-stopped
         networks:
             - default
 
     #  PHP-FPM workspace for admin service
-    web:
+    php-fpm:
         build:
             context: ./php-fpm
             args:
                 - PHP_VERSION=${PHP_VERSION}
                 - NODEJS_VERSION=${NODEJS_VERSION}
-                - TZ=${TIMEZONE}
-        container_name: web
-        ports:
-            - "9000:9000"
+                - TIMEZONE=${TIMEZONE}
+                - INSTALL_ZSH=${INSTALL_ZSH}
+        container_name: php-fpm
         volumes:
             - ${WORKSPACE_PATH}:/var/www:cached
             - ./php-fpm/ini/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
-        tty: true
-        networks:
-            - default
+            - ${SSH_KEY_PATH}:/root/.ssh/id_rsa:ro
+            - ${SSH_KEY_PATH}.pub:/root/.ssh/id_rsa.pub:ro
+            - ~/.ssh/known_hosts:/root/.ssh/known_hosts
+            - ~/.gitconfig:/root/.gitconfig:ro
+            - ./php-fpm/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf
+            - ./php-fpm/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+            - ./php-fpm/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
 
-    # PHP-Swoole workspace for api service
-    api:
-        build:
-            context: ./php-swoole
-            args:
-                - PHP_VERSION=${PHP_VERSION}
-        container_name: api
-        platform: linux/x86_64
-        volumes:
-            - ${WORKSPACE_PATH}:/var/www:cached
-        ports:
-            - "8000:8000"
-            - "9500:9500"
-            - "9501:9501"
-            - "9502:9502"
-            - "9503:9503"
-            - "3000:3000"
-            - "3001:3001"
+        extra_hosts:
+            - "agent-api.local:host-gateway"
+            - "cronjob.local:host-gateway"
+            - "external-api.local:host-gateway"
+            - "front-api.local:host-gateway"
+            - "internal-api.local:host-gateway"
+            - "socket-api.local:host-gateway"
+            - "agent-web.local:host-gateway"
+            - "apis.local:host-gateway"
         tty: true
+        restart: unless-stopped
         networks:
             - default
 
     # MySQL database service
     mysql:
+        platform: linux/amd64
         build:
             context: ./mysql
             args:
@@ -73,6 +73,64 @@ services:
             - ./mysql/data:/var/lib/mysql
             - ./mysql/log:/var/log/mysql
             - ./mysql/config:/etc/mysql/conf.d
+        restart: unless-stopped
+        networks:
+            - default
+
+    #  PHP-FPM workspace for admin service
+    php-fpm8:
+        build:
+            context: ./php-fpm8
+            args:
+                - PHP_VERSION=${PHP8_VERSION}
+                - NODEJS_VERSION=${NODEJS_VERSION}
+                - TIMEZONE=${TIMEZONE}
+                - INSTALL_ZSH=${INSTALL_ZSH}
+        container_name: php-fpm8
+        volumes:
+            - ${WORKSPACE_PATH}:/var/www:cached
+            - ./php-fpm8/ini/php${PHP8_VERSION}.ini:/usr/local/etc/php/php.ini
+            - ${SSH_KEY_PATH}:/root/.ssh/id_rsa:ro
+            - ${SSH_KEY_PATH}.pub:/root/.ssh/id_rsa.pub:ro
+            - ~/.ssh/known_hosts:/root/.ssh/known_hosts
+            - ~/.gitconfig:/root/.gitconfig:ro
+            - ./php-fpm8/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf
+            - ./php-fpm8/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+            - ./php-fpm8/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
+
+        extra_hosts:
+            - "agent-api.local:host-gateway"
+            - "agent-web.local:host-gateway"
+            - "cronjob.local:host-gateway"
+            - "external-api.local:host-gateway"
+            - "front-api.local:host-gateway"
+            - "internal-api.local:host-gateway"
+            - "socket-api.local:host-gateway"
+            - "apis.local:host-gateway"
+        tty: true
+        restart: unless-stopped
+        networks:
+            - default
+
+    mysql8:
+        build:
+            context: ./mysql8
+            args:
+                - MYSQL_VERSION=${MYSQL8_VERSION}
+        container_name: mysql8
+        ports:
+            - "${MYSQL8_PORT}:3306"
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - TZ=${TIMEZONE}
+        volumes:
+            - ./mysql8/data:/var/lib/mysql
+            - ./mysql8/log:/var/log/mysql
+            - ./mysql8/config:/etc/mysql/conf.d
+        restart: unless-stopped
         networks:
             - default
 
@@ -82,61 +140,9 @@ services:
         container_name: redis
         ports:
             - "${REDIS_PORT}:6379"
+        restart: unless-stopped
         networks:
             - default
-
-    # RabbitMQ service
-    rabbitmq:
-        build:
-            context: ./rabbitmq
-        container_name: rabbitmq
-        hostname: rabbitmq
-        ports:
-        - "5672:5672"
-        - "15672:15672"
-        - "25672:25672"
-        volumes:
-        - ./rabbitmq/data:/var/lib/rabbitmq
-        - ./rabbitmq/logs:/var/log/rabbitmq
-        - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-        restart: always
-        networks:
-            - default
-
-    gitlab-runner:
-        build:
-            context: ./gitlab-runner
-        container_name: gitlab-runner
-        restart: always
-        volumes:
-            - ./gitlab-runner/config:/etc/gitlab-runner
-            - /var/run/docker.sock:/var/run/docker.sock
-        networks:
-            - default
-
-#    elasticsearch:
-#        image: elasticsearch:7.8.0
-#        container_name: elastic
-#        restart: always
-#        environment:
-#            # 开启内存锁定
-#            - bootstrap.memory_lock=true
-#            - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-#            # 指定单节点启动
-#            - discovery.type=single-node
-#        ulimits:
-#            # 取消内存相关限制 用于开启内存锁定
-#            memlock:
-#                soft: -1
-#                hard: -1
-#        volumes:
-#            - ./data:/usr/share/elasticsearch/data
-#            - ./logs:/usr/share/elasticsearch/logs
-#            - ./plugins:/usr/share/elasticsearch/plugins
-#        ports:
-#            - "9200:9200"
-#        networks:
-#          - default
 
 networks:
     default:

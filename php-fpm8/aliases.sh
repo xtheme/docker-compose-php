@@ -29,8 +29,8 @@ parse_git_branch() {
 if [ -n "$ZSH_VERSION" ]; then
     # Zsh 語法
     setopt PROMPT_SUBST
-    PROMPT='[php-fpm] %F{green}%n@%m%f:%F{blue}%~%f%F{yellow}$(parse_git_branch)%f%# '
+    PROMPT='[php-fpm8] %F{green}%n@%m%f:%F{blue}%~%f%F{yellow}$(parse_git_branch)%f%# '
 else
     # Bash 語法（單引號讓 $(parse_git_branch) 每次顯示 prompt 時才求值）
-    export PS1='[php-fpm] \[\e[32m\]\u@\h\[\e[0m\]:\[\e[34m\]\w\[\e[0m\]\[\e[33m\]$(parse_git_branch)\[\e[0m\]\$ '
+    export PS1='[php-fpm8] \[\e[32m\]\u@\h\[\e[0m\]:\[\e[34m\]\w\[\e[0m\]\[\e[33m\]$(parse_git_branch)\[\e[0m\]\$ '
 fi

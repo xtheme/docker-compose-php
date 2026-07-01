@@ -1,13 +1,22 @@
+# Secrets / personal config
 .env
+
+# OS noise
 .DS_Store
+
+# IDE / agent tooling state
 .idea/
+.claude/
+.codex/
+
+# AI agent working docs（在本地保留即可，不入 git）
+docs/superpowers/
+
+# Service runtime state
 /mysql/data/*
 /mysql/log/*
-/clickhouse/data/*
-/clickhouse/log/*
-/elasticsearch/*
-/gitlab-runner/config/*
-/rabbitmq/data/*
+/mysql8/data/*
+/mysql8/log/*
 
-
+# Logs
 *.log

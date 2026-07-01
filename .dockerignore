@@ -1,0 +1,33 @@
+# Version control & IDE
+.git/
+.github/
+.idea/
+.claude/
+.codex/
+
+# OS noise
+.DS_Store
+**/.DS_Store
+
+# Local-only
+.env
+Workspace/
+
+# Service state (huge, never belongs in build context)
+mysql/data/
+mysql/log/
+mysql8/data/
+mysql8/log/
+gitlab-runner/config/
+rabbitmq/data/
+rabbitmq/logs/
+
+# Logs
+*.log
+nginx/logs/
+
+# Docs (not consumed during build)
+docs/
+README.md
+CLAUDE.md
+AGENTS.md
